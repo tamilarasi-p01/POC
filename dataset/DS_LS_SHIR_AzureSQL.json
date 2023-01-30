@@ -1,0 +1,13 @@
+{
+	"name": "DS_LS_SHIR_AzureSQL",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_SHIR_AzureSQL",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

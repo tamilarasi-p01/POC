@@ -1,0 +1,13 @@
+{
+	"name": "DS_LS_SRC_Metadata",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_SRC_Metadata",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

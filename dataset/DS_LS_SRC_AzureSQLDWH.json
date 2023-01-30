@@ -1,0 +1,41 @@
+{
+	"name": "DS_LS_SRC_AzureSQLDWH",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_SRC_AzureSQLDWH",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"ServerName": "@dataset().ServerName",
+				"DBName": "@dataset().DBName"
+			}
+		},
+		"parameters": {
+			"SchemaName": {
+				"type": "string"
+			},
+			"TableName": {
+				"type": "string"
+			},
+			"DBName": {
+				"type": "string"
+			},
+			"ServerName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": {
+				"value": "@dataset().SchemaName",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().TableName",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

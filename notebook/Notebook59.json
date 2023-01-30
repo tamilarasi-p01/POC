@@ -1,0 +1,67 @@
+{
+	"name": "Notebook59",
+	"properties": {
+		"folder": {
+			"name": "Sample"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "ETLMigPool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2,
+			"runAsWorkspaceSystemIdentity": false,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "5ce3a029-590c-469f-a391-74d1740e85bc"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1"
+			},
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "python"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/5e1710be-d771-4d37-99ce-6a947eb5b32f/resourceGroups/rgETLMigration/providers/Microsoft.Synapse/workspaces/etlmigpocws/bigDataPools/ETLMigPool",
+				"name": "ETLMigPool",
+				"type": "Spark",
+				"endpoint": "https://etlmigpocws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/ETLMigPool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.2",
+				"nodeCount": 10,
+				"cores": 4,
+				"memory": 28,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"print(\"The notebook number is 1\")"
+				]
+			}
+		]
+	}
+}

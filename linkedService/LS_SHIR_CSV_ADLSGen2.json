@@ -1,0 +1,21 @@
+{
+	"name": "LS_SHIR_CSV_ADLSGen2",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"parameters": {
+			"BaseURL": {
+				"type": "string",
+				"defaultValue": "https://etlmigpocadls.dfs.core.windows.net/"
+			}
+		},
+		"annotations": [],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "@{linkedService().BaseURL}"
+		},
+		"connectVia": {
+			"referenceName": "AutoResolveIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

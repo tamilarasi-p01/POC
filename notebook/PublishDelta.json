@@ -1,0 +1,328 @@
+{
+	"name": "PublishDelta",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "ETLMigPool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "56g",
+			"driverCores": 8,
+			"executorMemory": "56g",
+			"executorCores": 8,
+			"numExecutors": 1,
+			"runAsWorkspaceSystemIdentity": false,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "true",
+				"spark.dynamicAllocation.minExecutors": "1",
+				"spark.dynamicAllocation.maxExecutors": "4",
+				"spark.autotune.trackingId": "2d3141a3-8885-47a4-954a-b416b0e30706"
+			}
+		},
+		"metadata": {
+			"saveOutput": false,
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/5e1710be-d771-4d37-99ce-6a947eb5b32f/resourceGroups/rgETLMigration/providers/Microsoft.Synapse/workspaces/etlmigpocws/bigDataPools/ETLMigPool",
+				"name": "ETLMigPool",
+				"type": "Spark",
+				"endpoint": "https://etlmigpocws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/ETLMigPool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.2",
+				"nodeCount": 10,
+				"cores": 8,
+				"memory": 56,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"metadata": {
+					"tags": [
+						"parameters"
+					]
+				},
+				"source": [
+					"SourceDBName=\"\"\r\n",
+					"SourceTableName=\"Actual\"\r\n",
+					"SourceQuery=\"\"\r\n",
+					"TargetSchemaName = \"\"\r\n",
+					"TargetTableName = \"Reporting_ACRNewBizandErosion\"\r\n",
+					"TargetAccountURL = \"https://etlmigpocadls.dfs.core.windows.net\"\r\n",
+					"TargetContainer = \"etlmigpocdatalake\"\r\n",
+					"TargetFolderPath = \"data/publish/\"\r\n",
+					"TargetCSVFolderPath = \"data/publish/metadata/\"\r\n",
+					"IsTruncate = True\r\n",
+					"LatestPublishPath = \"data/publish/\"\r\n",
+					"SkipDWH = True"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"import pyspark.sql.functions as F\r\n",
+					"import re\r\n",
+					"\r\n",
+					"if(SourceQuery == \"\"):\r\n",
+					"   SourceQuery = \"SELECT * FROM \"+SourceDBName+\".\"+SourceTableName\r\n",
+					"\r\n",
+					"LatestPublishLocation = \"\"\r\n",
+					"if(LatestPublishPath is not None and len(LatestPublishPath) > 0):\r\n",
+					"   LatestPublishLocation = 'abfss://{container}@{datalakeaccount}/{folderpath}'.format(container = TargetContainer,datalakeaccount=TargetAccountURL.replace('https://',''),folderpath=LatestPublishPath)\r\n",
+					"\r\n",
+					"TargetLocation = 'abfss://{container}@{datalakeaccount}/{folderpath}'.format(container = TargetContainer,datalakeaccount=TargetAccountURL.replace('https://',''),folderpath=TargetFolderPath)\r\n",
+					"\r\n",
+					"if(IsTruncate):\r\n",
+					"   df = spark.sql(SourceQuery)\r\n",
+					"else:\r\n",
+					"   dfLatest = spark.read.format(\"delta\").load(LatestPublishLocation)\r\n",
+					"   dfSQL = spark.sql(SourceQuery)\r\n",
+					"\r\n",
+					"   df1 = dfLatest.select([F.col(\"`\"+col+\"`\").alias(re.sub(\"[^0-9a-zA-Z$_#%]+\",\"\",col.replace(\"_\",\"\"))) for col in dfLatest.columns])\r\n",
+					"   df2 = dfSQL.select([F.col(\"`\"+col+\"`\").alias(re.sub(\"[^0-9a-zA-Z$_#%]+\",\"\",col.replace(\"_\",\"\"))) for col in dfSQL.columns])\r\n",
+					"\r\n",
+					"   df = df1.unionByName(df2,allowMissingColumns=True)\r\n",
+					"\r\n",
+					"try:\r\n",
+					"   mssparkutils.fs.rm(TargetLocation, True)\r\n",
+					"except:\r\n",
+					"   print(\"The specified path does not exist\")\r\n",
+					"   pass\r\n",
+					"   \r\n",
+					"spark.conf.set(\"varLatestPublishLocation\",LatestPublishLocation)"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"from pyspark.sql.types import StructType,StructField, StringType, IntegerType\r\n",
+					"externalSourceName = TargetContainer.lower() + \"_\" + TargetAccountURL.replace(\"https://\",'').replace(\".\",\"_\")\r\n",
+					"createDataSourceScript = \"IF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = '{dataSourceName}') CREATE EXTERNAL DATA SOURCE [{dataSourceName}] WITH ( LOCATION = '{dataSourceLocation}' )\".format(dataSourceName = externalSourceName, dataSourceLocation = TargetAccountURL + \"/\" + TargetContainer)\r\n",
+					"\r\n",
+					"externalFileFormatName = \"SynapseParquetFormat\"\r\n",
+					"formatString = \"FORMAT_TYPE = PARQUET\"\r\n",
+					"externalFileFormatScript = \"IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = '{fileFormatName}') CREATE EXTERNAL FILE FORMAT [{fileFormatName}] WITH ({formatString}, DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec')\".format(fileFormatName=externalFileFormatName, formatString = formatString)  \r\n",
+					"\r\n",
+					"columnList = \"\"\r\n",
+					"if(IsTruncate):\r\n",
+					"    fields = df.schema.fields\r\n",
+					"else:\r\n",
+					"    fields = dfSQL.schema.fields\r\n",
+					"\r\n",
+					"\r\n",
+					"for x in fields:\r\n",
+					"    # Default data type\r\n",
+					"    if(SkipDWH):\r\n",
+					"        sqlType = \"NVARCHAR(max)\"\r\n",
+					"    else:\r\n",
+					"        sqlType = \"NVARCHAR(4000)\"\r\n",
+					"        \r\n",
+					"    sparkType = str(x.dataType)\r\n",
+					"\r\n",
+					"    if(sparkType == \"IntegerType\"):\r\n",
+					"        sqlType = \"INT\"\r\n",
+					"    if(sparkType == \"LongType\"):\r\n",
+					"        sqlType = \"BIGINT\"\r\n",
+					"    if(sparkType == \"ByteType\"):\r\n",
+					"        sqlType = \"INT\"\r\n",
+					"    if(sparkType == \"BooleanType\"):\r\n",
+					"        sqlType = \"BIT\"\r\n",
+					"    if(sparkType == \"DoubleType\"):\r\n",
+					"        sqlType = \"FLOAT(53)\"\r\n",
+					"    if(sparkType == \"FloatType\"):\r\n",
+					"        sqlType = \"FLOAT(53)\"\r\n",
+					"    if(sparkType == \"BinaryType\"):\r\n",
+					"        sqlType = \"VARBINARY(MAX)\"\r\n",
+					"    if(sparkType == \"TimestampType\"): # Spark data type TIMESTAMP (INT96) is throwing error when trying to convert to DATETIME\r\n",
+					"        sqlType = \"DATETIME\"\r\n",
+					"    if(sparkType == \"DateType\"):\r\n",
+					"        sqlType = \"DATE\"\r\n",
+					"    if(\"DecimalType\" in sparkType):\r\n",
+					"        sqlType = sparkType.replace(\"Type\",\"\").upper()\r\n",
+					"\r\n",
+					"    columnList += '\"' + x.name.replace('\"','\"\"').replace(\"[\",\"\").replace(\"]\",\"\") + '\" ' + sqlType + ', '\r\n",
+					"\r\n",
+					"columnList = columnList[:len(columnList)-2]\r\n",
+					"if not SkipDWH:\r\n",
+					"    TargetTableName = TargetTableName + \"_External\"\r\n",
+					"\r\n",
+					"dropexternaltableScript = \"IF EXISTS (SELECT * FROM sys.external_tables T INNER JOIN sys.schemas S ON T.schema_id = S.schema_id WHERE T.name = '{tableName}' AND S.name = '{schemaName}') DROP EXTERNAL TABLE [{schemaName}].[{tableName}]\".format(schemaName = TargetSchemaName, tableName = TargetTableName)    \r\n",
+					"droptableScript = \"IF EXISTS (SELECT * FROM sys.tables T INNER JOIN sys.schemas S ON T.schema_id = S.schema_id WHERE T.name = '{tableName}' AND S.name = '{schemaName}') DROP TABLE [{schemaName}].[{tableName}]\".format(schemaName = TargetSchemaName, tableName = TargetTableName)    \r\n",
+					"createScript = \"IF NOT EXISTS (SELECT * FROM sys.external_tables T INNER JOIN sys.schemas S ON T.schema_id = S.schema_id WHERE T.name = '{tableName}' AND S.name = '{schemaName}') CREATE EXTERNAL TABLE [{schemaName}].[{tableName}] ({columnList}) WITH (LOCATION = '{dataLakePath}', DATA_SOURCE = [{externalDataSource}], FILE_FORMAT = {fileFormat})\".format(schemaName = TargetSchemaName, tableName = TargetTableName, columnList = columnList, dataLakePath=TargetFolderPath, externalDataSource=externalSourceName, fileFormat=externalFileFormatName)\r\n",
+					"\r\n",
+					"droptableScriptSQL = \"IF EXISTS (SELECT * FROM sys.tables T INNER JOIN sys.schemas S ON T.schema_id = S.schema_id WHERE T.name = '{tableName}' AND S.name = 'stage') DROP TABLE [stage].[{tableName}]\".format(tableName = TargetTableName)    \r\n",
+					"createScriptSQL = \"IF NOT EXISTS (SELECT * FROM sys.tables T INNER JOIN sys.schemas S ON T.schema_id = S.schema_id WHERE T.name = '{tableName}' AND S.name = 'stage') CREATE TABLE [stage].[{tableName}] ({columnList})\".format(tableName = TargetTableName, columnList = columnList)\r\n",
+					"\r\n",
+					"tableScript = \"\"\r\n",
+					"if(SkipDWH):\r\n",
+					"    tableScript = \"{droptableScriptSQL}\\n{createScriptSQL}\".format(droptableScriptSQL=droptableScriptSQL,createScriptSQL=createScriptSQL)\r\n",
+					"else:\r\n",
+					"    tableScript = \"{createDataSourceScript}\\n{externalFileFormatScript}\\n{dropexternaltableScript}\\n{droptableScript}\\n{createScript}\".format(createDataSourceScript = createDataSourceScript ,externalFileFormatScript = externalFileFormatScript,dropexternaltableScript=dropexternaltableScript,droptableScript=droptableScript,createScript=createScript)"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "scala"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%spark\r\n",
+					"val varLatestPublishLocation = spark.conf.get(\"varLatestPublishLocation\")\r\n",
+					"var no_of_files: Int = -1\r\n",
+					"\r\n",
+					"if(varLatestPublishLocation.length > 0){\r\n",
+					"    try {\r\n",
+					"        val newdf = spark.read.format(\"delta\").load(varLatestPublishLocation)\r\n",
+					"    \r\n",
+					"        newdf.cache.foreach(_ => ())\r\n",
+					"        val catalyst_plan = newdf.queryExecution.logical\r\n",
+					"        val df_size_in_mb = Math.ceil((spark.sessionState.executePlan(\r\n",
+					"            catalyst_plan).optimizedPlan.stats.sizeInBytes).toDouble/(1024*1024).toDouble)\r\n",
+					"        \r\n",
+					"        no_of_files = (Math.ceil(df_size_in_mb.toInt/(256.toInt))).toInt\r\n",
+					"    } catch {\r\n",
+					"        case e: Exception => false\r\n",
+					"    }\r\n",
+					"        \r\n",
+					"}\r\n",
+					"spark.conf.set(\"no_of_files\",no_of_files.toLong)"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"import pyspark.sql.functions as F\r\n",
+					"import re\r\n",
+					"\r\n",
+					"if(IsTruncate):\r\n",
+					"    df = df.select([F.col(\"`\"+col+\"`\").alias(re.sub(\"[^0-9a-zA-Z$_#]+\",\"_\",col.replace(\"_\",\"__\"))) for col in df.columns])\r\n",
+					"\r\n",
+					"no_of_files = int(spark.conf.get(\"no_of_files\",\"0\"))\r\n",
+					"if(no_of_files > 0):\r\n",
+					"    df.repartition(no_of_files).write.format('delta').mode('overwrite').save(TargetLocation)\r\n",
+					"else:\r\n",
+					"    df.write.format('delta').mode('overwrite').save(TargetLocation)"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"versiondf = spark.sql(\"DESCRIBE HISTORY delta.`{0}`\".format(TargetLocation))\r\n",
+					"if(versiondf.count() > 1):\r\n",
+					"    TargetLocationDeleted = TargetLocation + \"_Deleted\"\r\n",
+					"    # copy the files to _Deleted folder\r\n",
+					"    mssparkutils.fs.cp(TargetLocation,TargetLocationDeleted,True)\r\n",
+					"\r\n",
+					"    # read the data from new _Deleted folder\r\n",
+					"    latestdf = spark.read.format(\"delta\").load(TargetLocationDeleted)\r\n",
+					"\r\n",
+					"    # delete the original folder\r\n",
+					"    mssparkutils.fs.rm(TargetLocation,True)\r\n",
+					"\r\n",
+					"    # wrtite the data back to orginal folder from the copied _Deleted folder\r\n",
+					"    latestdf.write.format('delta').mode('overwrite').save(TargetLocation)\r\n",
+					"\r\n",
+					"    # delete the _Deleted folder after writing the data to original folder\r\n",
+					"    mssparkutils.fs.rm(TargetLocationDeleted,True)\r\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"tableScript = tableScript.replace('\\\\','\\\\\\\\').replace('\"','\\\\\"')\r\n",
+					"finaldf = spark.read.format(\"delta\").load(TargetLocation)\r\n",
+					"OutputString = '{'+'\"RowCount\":{0},\"TableScript\":\"{1}\"'.format(finaldf.count(),tableScript)+'}'\r\n",
+					"\r\n",
+					"if(len(OutputString) > 0):\r\n",
+					"    mssparkutils.notebook.exit(OutputString)\r\n",
+					"else:\r\n",
+					"    raise Exception(\"Table script is not available\")"
+				]
+			}
+		]
+	}
+}

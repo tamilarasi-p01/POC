@@ -1,0 +1,173 @@
+{
+	"name": "m_Generic_ABC_Fail_Email",
+	"properties": {
+		"folder": {
+			"name": "z_CodeConversion"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "ETLMigrationPOC",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 1,
+			"runAsWorkspaceSystemIdentity": false,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "true",
+				"spark.dynamicAllocation.minExecutors": "1",
+				"spark.dynamicAllocation.maxExecutors": "3",
+				"spark.autotune.trackingId": "c7ef1467-453a-45cc-aaa0-17d7fb44e970"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1"
+			},
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/5e1710be-d771-4d37-99ce-6a947eb5b32f/resourceGroups/rgETLMigration/providers/Microsoft.Synapse/workspaces/etlmigpocws/bigDataPools/ETLMigrationPOC",
+				"name": "ETLMigrationPOC",
+				"type": "Spark",
+				"endpoint": "https://etlmigpocws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/ETLMigrationPOC",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.3",
+				"nodeCount": 10,
+				"cores": 4,
+				"memory": 28,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"metadata": {
+					"collapsed": false
+				},
+				"source": [
+					"import os;\r\n",
+					"from pyspark.sql import *\r\n",
+					"from pyspark.sql.functions import *\r\n",
+					"# from Mapplets import Mapplets\r\n",
+					"from pyspark import SparkContext;\r\n",
+					"from pyspark.sql.session import SparkSession\r\n",
+					"\r\n",
+					"\r\n",
+					"## Could not run below - as we cannot assign multple context.\r\n",
+					"# sc = SparkContext('local')\r\n",
+					"# spark = SparkSession(sc)\r\n",
+					"\r\n",
+					"Src_AccountURL = 'etlmigpocadls'\r\n",
+					"Src_Container = 'etlmigpocdatalake'\r\n",
+					"Src_Path = '_StaleFiles'\r\n",
+					"\r\n",
+					"Src_URL = 'abfss://{0}@{1}.dfs.core.windows.net/{2}/GLOBAL_CONFIG.parquet'.format(Src_Container, Src_AccountURL, Src_Path)\r\n",
+					"Tgt_URL = 'abfss://{0}@{1}.dfs.core.windows.net/{2}/Output/GLOBAL_CONFIG/'.format(Src_Container, Src_AccountURL, Src_Path)\r\n",
+					"print(\"Source URL : \" + Src_URL)\r\n",
+					"print(\"Target URL : \" + Tgt_URL)\r\n",
+					"\r\n",
+					"\r\n",
+					"### BB Output\r\n",
+					"\r\n",
+					"# SQ_GLOBAL_CONFIG = spark.read.jdbc(os.environ.get('DBConnection_ABC_CONNECT_STRING'), \"\"\"(SELECT  '1'  from dual\r\n",
+					"# WHERE 1=0) QRY\"\"\", properties={'user': os.environ.get('DBConnection_ABC_LOGIN'), 'password': os.environ.get('DBConnection_ABC_PASSWORD'), 'driver': os.environ.get('ORACLE_DRIVER')}).withColumn(\"sys_row_id\", monotonically_increasing_id())\r\n",
+					"\r\n",
+					"# FLTR_ROW_REJECT = SQ_GLOBAL_CONFIG.select( \\\r\n",
+					"# \t.alias('SUCCESS_EMAILID') \\\r\n",
+					"# ).filter(\"false\").withColumn(\"sys_row_id\", monotonically_increasing_id())\r\n",
+					"\r\n",
+					"\r\n",
+					"SQ_GLOBAL_CONFIG = spark.read.format('parquet').load(Src_URL)\r\n",
+					"SQ_GLOBAL_CONFIG.show()\r\n",
+					"\r\n",
+					"FLTR_ROW_REJECT = SQ_GLOBAL_CONFIG.filter(lower(SQ_GLOBAL_CONFIG[\"SUCCESS_EMAILID\"]) == \"false\")\r\n",
+					"FLTR_ROW_REJECT.show()\r\n",
+					"\r\n",
+					"\r\n",
+					"\r\n",
+					"# sourcedf = spark.read.format(\"delta\").load(sourcelocation)\r\n",
+					"# SQ_GLOBAL_CONFIG_path = spark.read.parquet('abfss://{0}@{1}/HC01/Handshake'.format(SourceContainer,SourceAccountURL)).first()[]"
+				],
+				"execution_count": 1
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"### Writing Data to Target File\r\n",
+					"\r\n",
+					"FLTR_ROW_REJECT.write.format(\"delta\").mode(\"overwrite\").save(Tgt_URL)\r\n",
+					"\r\n",
+					"# #  df.write.format('delta').mode('overwrite').save(TargetLocation)"
+				],
+				"execution_count": 2
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"## Reading data from TargetFile\r\n",
+					"df = spark.read.format(\"delta\").load(Tgt_URL)\r\n",
+					"df.show()"
+				],
+				"execution_count": 3
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# mssparkutils.fs.rm(\"abfss://etlmigpocdatalake@etlmigpocadls.dfs.core.windows.net/_StaleFiles/Output/GLOBAL_CONFIG.parquet/\", True) \r\n",
+					"# mssparkutils.fs.rm(\"abfss://etlmigpocdatalake@etlmigpocadls.dfs.core.windows.net/_StaleFiles/Output/GLOBAL_CONFIG/\", True) "
+				],
+				"execution_count": 4
+			}
+		]
+	}
+}

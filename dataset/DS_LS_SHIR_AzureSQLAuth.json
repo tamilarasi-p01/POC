@@ -1,0 +1,37 @@
+{
+	"name": "DS_LS_SHIR_AzureSQLAuth",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_SHIR_AzureSQLAuth",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"ServerName": "@dataset().ServerName",
+				"DatabaseName": "@dataset().DatabaseName",
+				"UserName": "@dataset().UserName",
+				"KeyVaultURL": "@dataset().KeyVaultURL",
+				"SecretName": "@dataset().SecretName"
+			}
+		},
+		"parameters": {
+			"ServerName": {
+				"type": "string"
+			},
+			"DatabaseName": {
+				"type": "string"
+			},
+			"UserName": {
+				"type": "string"
+			},
+			"KeyVaultURL": {
+				"type": "string"
+			},
+			"SecretName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

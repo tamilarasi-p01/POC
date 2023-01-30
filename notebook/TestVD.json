@@ -1,0 +1,92 @@
+{
+	"name": "TestVD",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "ETLMigPool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "112g",
+			"driverCores": 16,
+			"executorMemory": "112g",
+			"executorCores": 16,
+			"numExecutors": 1,
+			"runAsWorkspaceSystemIdentity": false,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "true",
+				"spark.dynamicAllocation.minExecutors": "1",
+				"spark.dynamicAllocation.maxExecutors": "5",
+				"spark.autotune.trackingId": "01bb28e6-ea53-4423-acd4-eeba9dffb8d6"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1"
+			},
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "python"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/5e1710be-d771-4d37-99ce-6a947eb5b32f/resourceGroups/rgETLMigration/providers/Microsoft.Synapse/workspaces/etlmigpocws/bigDataPools/ETLMigPool",
+				"name": "ETLMigPool",
+				"type": "Spark",
+				"endpoint": "https://etlmigpocws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/ETLMigPool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.2",
+				"nodeCount": 10,
+				"cores": 16,
+				"memory": 112,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"import os; from pyspark.sql import * from pyspark.sql.functions import * from pyspark import SparkContext; from pyspark.sql.session import SparkSession  Src_AccountURL = 'etlmigpocadls' Src_Container = 'etlmigpocdatalake' Src_Path = '_StaleFiles' Src_URL = 'abfss://{0}@{1}.dfs.core.windows.net/{2}/GLOBAL_CONFIG.parquet'.format(Src_Container, Src_AccountURL, Src_Path) Tgt_URL = 'abfss://{0}@{1}.dfs.core.windows.net/{2}/data/Integration/File19/'.format(Src_Container, Src_AccountURL, Src_Path) SQ_GLOBAL_CONFIG = spark.read.format('parquet').load(Src_URL) SQ_GLOBAL_CONFIG.show() FLTR_ROW_REJECT = SQ_GLOBAL_CONFIG.filter(lower(SQ_GLOBAL_CONFIG[SUCCESS_EMAILID]) == false) FLTR_ROW_REJECT.show() FLTR_ROW_REJECT.write.format(delta).mode(overwrite).save(Tgt_URL) "
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"import os; from pyspark.sql import * from pyspark.sql.functions import * from pyspark import SparkContext; from pyspark.sql.session import SparkSession  Src_AccountURL = 'etlmigpocadls' Src_Container = 'etlmigpocdatalake' Src_Path = '_StaleFiles' Src_URL = 'abfss://{0}@{1}.dfs.core.windows.net/{2}/GLOBAL_CONFIG.parquet'.format(Src_Container, Src_AccountURL, Src_Path) Tgt_URL = 'abfss://{0}@{1}.dfs.core.windows.net/{2}/data/Integration/File19/'.format(Src_Container, Src_AccountURL, Src_Path) SQ_GLOBAL_CONFIG = spark.read.format('parquet').load(Src_URL) SQ_GLOBAL_CONFIG.show() FLTR_ROW_REJECT = SQ_GLOBAL_CONFIG.filter(lower(SQ_GLOBAL_CONFIG[SUCCESS_EMAILID]) == false) FLTR_ROW_REJECT.show() FLTR_ROW_REJECT.write.format(delta).mode(overwrite).save(Tgt_URL) "
+				]
+			}
+		]
+	}
+}

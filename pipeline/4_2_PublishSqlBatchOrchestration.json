@@ -1,0 +1,394 @@
+{
+	"name": "4_2_PublishSqlBatchOrchestration",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Batch Publish Metadata",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Log Publish Sql Batch Orchestration Start",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT DISTINCT PublishId\nFROM Config.vwPublishMetadata\nWHERE JobID = @{pipeline().parameters.JobId}\nAND Priority = @{pipeline().parameters.Priority}\nAND BatchNumber = @{pipeline().parameters.BatchNumber}\nAND Status = 'TableCreated'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_LS_SRC_Metadata",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach Publish Metadata",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Batch Publish Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Batch Publish Metadata').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"batchCount": 50,
+					"activities": [
+						{
+							"name": "Switch IntgrationRuntime",
+							"type": "Switch",
+							"dependsOn": [
+								{
+									"activity": "Get Publish Metadata",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"on": {
+									"value": "@activity('Get Publish Metadata').output.firstRow.IntegrationRunTime",
+									"type": "Expression"
+								},
+								"cases": [
+									{
+										"value": "SHIR",
+										"activities": [
+											{
+												"name": "Execute Publish Sql SHIR",
+												"type": "ExecutePipeline",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"pipeline": {
+														"referenceName": "4_3_PublishSqlSHIR",
+														"type": "PipelineReference"
+													},
+													"waitOnCompletion": true,
+													"parameters": {
+														"JobId": {
+															"value": "@pipeline().parameters.JobId",
+															"type": "Expression"
+														},
+														"MetaDataServerName": {
+															"value": "@pipeline().parameters.MetadataServerName",
+															"type": "Expression"
+														},
+														"MetaDataDatabaseName": {
+															"value": "@pipeline().parameters.MetadataDatabaseName",
+															"type": "Expression"
+														},
+														"PublishId": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.PublishId",
+															"type": "Expression"
+														},
+														"SynapseDBName": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.SynapseDBName",
+															"type": "Expression"
+														},
+														"TargetDBName": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.TargetDBName",
+															"type": "Expression"
+														},
+														"TargetTableName": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.TargetTableName",
+															"type": "Expression"
+														},
+														"TargetServerName": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.TargetServerName",
+															"type": "Expression"
+														},
+														"TargetStageSchemaName": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.TargetStageSchemaName",
+															"type": "Expression"
+														},
+														"TargetSchemaName": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.TargetSchemaName",
+															"type": "Expression"
+														},
+														"TargetAccountURL": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.TargetAccountURL",
+															"type": "Expression"
+														},
+														"TargetContainer": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.TargetContainer",
+															"type": "Expression"
+														},
+														"TargetFolderPath": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.TargetFolderPath",
+															"type": "Expression"
+														},
+														"SQLDWHServerName": {
+															"value": "@pipeline().parameters.SQLDWHServerName",
+															"type": "Expression"
+														},
+														"SQLDWHDatabaseName": {
+															"value": "@pipeline().parameters.SQLDWHDatabaseName",
+															"type": "Expression"
+														},
+														"SkipDWH": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.SkipDWH",
+															"type": "Expression"
+														},
+														"IsTruncate": {
+															"value": "@activity('Get Publish Metadata').output.firstRow.IsTruncate",
+															"type": "Expression"
+														}
+													}
+												}
+											},
+											{
+												"name": "UpdateStatus",
+												"type": "SqlServerStoredProcedure",
+												"dependsOn": [
+													{
+														"activity": "Execute Publish Sql SHIR",
+														"dependencyConditions": [
+															"Completed"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "7.00:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"storedProcedureName": "[Config].[usp_UpdateExecutionStatus]",
+													"storedProcedureParameters": {
+														"JobId": {
+															"value": {
+																"value": "@pipeline().parameters.JobID",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														},
+														"ExecutionTypeId": {
+															"value": {
+																"value": "@item().PublishId",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														},
+														"Status": {
+															"value": {
+																"value": "@if(equals(activity('Execute Publish Sql SHIR').status,'Failed'),'Failed','Success')",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"ExecutionType": {
+															"value": "Publish",
+															"type": "String"
+														},
+														"ErrorMessage": {
+															"value": {
+																"value": "@if(equals(activity('Execute Publish Sql SHIR').status,'Failed'),activity('Execute Publish Sql SHIR').error.message,null)",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"PipelineRunId": {
+															"value": {
+																"value": "@activity('Execute Publish Sql SHIR').output.pipelinerunid",
+																"type": "Expression"
+															},
+															"type": "String"
+														}
+													}
+												},
+												"linkedServiceName": {
+													"referenceName": "LS_SRC_Metadata",
+													"type": "LinkedServiceReference"
+												}
+											}
+										]
+									}
+								]
+							}
+						},
+						{
+							"name": "Get Publish Metadata",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT *\nFROM Config.vwPublishMetadata\nWHERE JobID = @{pipeline().parameters.JobId}\nAND Priority = @{pipeline().parameters.Priority}\nAND BatchNumber = @{pipeline().parameters.BatchNumber}\nAND PublishId = @{item().PublishId}\nAND Status = 'TableCreated'",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_Metadata",
+									"type": "DatasetReference"
+								},
+								"firstRowOnly": true
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Log Publish Sql Batch Orchestration Start",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),'and \n Batch number',string(pipeline().parameters.BatchNumber) ,'Started')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Log Publish Sql Batch Orchestration End",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "ForEach Publish Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),'and \n Batch number',string(pipeline().parameters.BatchNumber) ,'Completed')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"JobId": {
+				"type": "Int"
+			},
+			"BatchNumber": {
+				"type": "int"
+			},
+			"MetadataServerName": {
+				"type": "string"
+			},
+			"MetadataDatabaseName": {
+				"type": "string"
+			},
+			"Priority": {
+				"type": "int"
+			},
+			"SQLDWHServerName": {
+				"type": "string"
+			},
+			"SQLDWHDatabaseName": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Framework/Template/4_PublishOrchestration"
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-01-17T16:00:26Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

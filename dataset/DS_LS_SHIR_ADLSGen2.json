@@ -1,0 +1,19 @@
+{
+	"name": "DS_LS_SHIR_ADLSGen2",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "etlmigpocws-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

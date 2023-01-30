@@ -1,0 +1,181 @@
+{
+	"name": "GetExternalTableScript",
+	"properties": {
+		"folder": {
+			"name": "Framework"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "ETLMigPool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "56g",
+			"driverCores": 8,
+			"executorMemory": "56g",
+			"executorCores": 8,
+			"numExecutors": 1,
+			"runAsWorkspaceSystemIdentity": false,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "true",
+				"spark.dynamicAllocation.minExecutors": "1",
+				"spark.dynamicAllocation.maxExecutors": "4",
+				"spark.autotune.trackingId": "b3f2e357-2d1f-4ad8-9c8d-11951a9914b5"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1"
+			},
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/5e1710be-d771-4d37-99ce-6a947eb5b32f/resourceGroups/rgETLMigration/providers/Microsoft.Synapse/workspaces/etlmigpocws/bigDataPools/ETLMigPool",
+				"name": "ETLMigPool",
+				"type": "Spark",
+				"endpoint": "https://etlmigpocws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/ETLMigPool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.2",
+				"nodeCount": 10,
+				"cores": 8,
+				"memory": 56,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"metadata": {
+					"tags": [
+						"parameters"
+					]
+				},
+				"source": [
+					"TargetAccountURL = \"https://etlmigpocadls.dfs.core.windows.net\"\r\n",
+					"TargetContainer = \"etlmigpocdatalake\"\r\n",
+					"TargetFileType = \"parquet\"\r\n",
+					"TargetFolderPath = \"data/raw/202204272300/AnswersHub-ELTL/BumblebeeStore/PreStgAssignmentGroup\"\r\n",
+					"TargetFileName = \"PreStgAssignmentGroup.parquet\"\r\n",
+					"TargetSchemaName = \"dbBumblebeeStore\"\r\n",
+					"TargetTableName = \"PreStgAssignmentGroup\""
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"TargetLocation = \"abfss://{container}@{datalakeaccount}/{folderpath}/{filename}\".format(container = TargetContainer,datalakeaccount=TargetAccountURL.replace(\"https://\",\"\"),folderpath=TargetFolderPath,filename=TargetFileName)\r\n",
+					"\r\n",
+					"if(TargetFileType.lower() == \"parquet\"):\r\n",
+					"    df = spark.read.parquet(TargetLocation)"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"from pyspark.sql.types import StructType,StructField, StringType, IntegerType\r\n",
+					"externalSourceName = TargetContainer.lower() + \"_\" + TargetAccountURL.replace(\"https://\",'').replace(\".\",\"_\")\r\n",
+					"createDataSourceScript = \"IF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = '{dataSourceName}') CREATE EXTERNAL DATA SOURCE [{dataSourceName}] WITH ( LOCATION = '{dataSourceLocation}' )\".format(dataSourceName = externalSourceName, dataSourceLocation = TargetAccountURL + \"/\" + TargetContainer)\r\n",
+					"\r\n",
+					"externalFileFormatName = \"SynapseParquetFormat\"\r\n",
+					"formatString = \"FORMAT_TYPE = PARQUET\"\r\n",
+					"externalFileFormatScript = \"IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = '{fileFormatName}') CREATE EXTERNAL FILE FORMAT [{fileFormatName}] WITH ({formatString}, DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec')\".format(fileFormatName=externalFileFormatName, formatString = formatString)  \r\n",
+					"\r\n",
+					"schemaScript = \"IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '{schemaName}') BEGIN EXEC('CREATE SCHEMA [{schemaName}];') END\".format(schemaName = TargetSchemaName)\r\n",
+					"\r\n",
+					"columnList = \"\"\r\n",
+					"for x in df.schema.fields:\r\n",
+					"    # Default data type\r\n",
+					"    sqlType = \"NVARCHAR(4000)\"\r\n",
+					"    sparkType = str(x.dataType)\r\n",
+					"\r\n",
+					"    if(sparkType == \"IntegerType\"):\r\n",
+					"        sqlType = \"INT\"\r\n",
+					"    if(sparkType == \"LongType\"):\r\n",
+					"        sqlType = \"BIGINT\"\r\n",
+					"    if(sparkType == \"ByteType\"):\r\n",
+					"        sqlType = \"INT\"\r\n",
+					"    if(sparkType == \"BooleanType\"):\r\n",
+					"        sqlType = \"BIT\"\r\n",
+					"    if(sparkType == \"DoubleType\"):\r\n",
+					"        sqlType = \"FLOAT(53)\"\r\n",
+					"    if(sparkType == \"FloatType\"):\r\n",
+					"        sqlType = \"FLOAT(53)\"\r\n",
+					"    if(sparkType == \"BinaryType\"):\r\n",
+					"        sqlType = \"VARBINARY(MAX)\"\r\n",
+					"    if(sparkType == \"TimestampType\"): # Spark data type TIMESTAMP (INT96) is throwing error when trying to convert to DATETIME\r\n",
+					"        sqlType = \"DATETIME\"\r\n",
+					"    if(sparkType == \"DateType\"):\r\n",
+					"        sqlType = \"DATE\"\r\n",
+					"    if(\"DecimalType\" in sparkType):\r\n",
+					"        sqlType = sparkType.replace(\"Type\",\"\").upper()\r\n",
+					"\r\n",
+					"    # columnList += '\"' + x.name.replace('\"','\"\"') + '\" ' + sqlType + ', '\r\n",
+					"    columnList += '\"' + x.name.replace('\"','\"\"').replace(\"[\",\"\").replace(\"]\",\"\") + '\" ' + sqlType + ', '\r\n",
+					"\r\n",
+					"columnList = columnList[:len(columnList)-2]\r\n",
+					"# print(columnList)\r\n",
+					"\r\n",
+					"dropScript = \"IF EXISTS (SELECT * FROM sys.external_tables T INNER JOIN sys.schemas S ON T.schema_id = S.schema_id WHERE T.name = '{tableName}' AND S.name = '{schemaName}') DROP EXTERNAL TABLE [{schemaName}].[{tableName}]\".format(schemaName = TargetSchemaName, tableName = TargetTableName)    \r\n",
+					"\r\n",
+					"createScript = \"IF NOT EXISTS (SELECT * FROM sys.external_tables T INNER JOIN sys.schemas S ON T.schema_id = S.schema_id WHERE T.name = '{tableName}' AND S.name = '{schemaName}') CREATE EXTERNAL TABLE [{schemaName}].[{tableName}] ({columnList}) WITH (LOCATION = '{dataLakePath}', DATA_SOURCE = [{externalDataSource}], FILE_FORMAT = {fileFormat})\".format(schemaName = TargetSchemaName, tableName = TargetTableName, columnList = columnList, dataLakePath=TargetFolderPath, externalDataSource=externalSourceName, fileFormat=externalFileFormatName)\r\n",
+					"\r\n",
+					"tableScript = \"{createDataSourceScript}\\n{externalFileFormatScript}\\n{schemaScript}\\n{dropScript}\\n{createScript}\".format(createDataSourceScript = createDataSourceScript ,externalFileFormatScript = externalFileFormatScript,schemaScript = schemaScript,dropScript=dropScript,createScript=createScript)\r\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"mssparkutils.notebook.exit(tableScript)"
+				]
+			}
+		]
+	}
+}

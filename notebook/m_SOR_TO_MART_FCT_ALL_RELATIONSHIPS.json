@@ -1,0 +1,783 @@
+{
+	"name": "m_SOR_TO_MART_FCT_ALL_RELATIONSHIPS",
+	"properties": {
+		"folder": {
+			"name": "z_CodeConversion"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "ETLMigrationPOC",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 1,
+			"runAsWorkspaceSystemIdentity": false,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "true",
+				"spark.dynamicAllocation.minExecutors": "1",
+				"spark.dynamicAllocation.maxExecutors": "1",
+				"spark.autotune.trackingId": "709dd469-3385-45b1-9311-a4b597eece13"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1",
+				"state": {
+					"1fa469f4-d5f8-4ebc-b2c1-962eeef0d60f": {
+						"type": "Synapse.DataFrame",
+						"sync_state": {
+							"table": {
+								"rows": [
+									{
+										"0": "FINWARE",
+										"1": "Smp_001",
+										"2": "sample_test",
+										"3": "2023-01-17 00:00:00",
+										"4": "FINWARE_001",
+										"5": "Finware amount1",
+										"7": "2022-01-01 00:00:00",
+										"8": "2024-12-01 00:00:00",
+										"9": "12",
+										"10": "13",
+										"11": "14",
+										"12": "15",
+										"13": "16",
+										"14": "17"
+									},
+									{
+										"0": "FINWARE",
+										"1": "Smp_002",
+										"2": "sample_test2",
+										"3": "2023-01-17 00:00:00",
+										"4": "FINWARE_002",
+										"5": "Finware amount2",
+										"7": "2023-01-01 00:00:00",
+										"8": "2025-12-01 00:00:00",
+										"9": "20",
+										"10": "21",
+										"11": "22",
+										"12": "23",
+										"13": "24",
+										"14": "25"
+									}
+								],
+								"schema": [
+									{
+										"key": "0",
+										"name": "FINWARE",
+										"type": "string"
+									},
+									{
+										"key": "1",
+										"name": "V_F_FW_REL_ACCOUNT_NBR",
+										"type": "string"
+									},
+									{
+										"key": "2",
+										"name": "V_D_FIC_CUSTOMER_REF_CODE",
+										"type": "string"
+									},
+									{
+										"key": "3",
+										"name": "D_F_FW_REL_MIS_DATE",
+										"type": "timestamp"
+									},
+									{
+										"key": "4",
+										"name": "V_F_FW_REL_CUSTOMER_REF_CODE",
+										"type": "string"
+									},
+									{
+										"key": "5",
+										"name": "F_F_FW_REL_ACCT_CUST_REL",
+										"type": "string"
+									},
+									{
+										"key": "6",
+										"name": "V_F_FW_REL_PROD_TYPE",
+										"type": "string"
+									},
+									{
+										"key": "7",
+										"name": "D_F_FW_REL_ACCT_OPEN_DATE",
+										"type": "timestamp"
+									},
+									{
+										"key": "8",
+										"name": "D_F_FW_REL_ACCT_CLOSED_DATE",
+										"type": "timestamp"
+									},
+									{
+										"key": "9",
+										"name": "V_D_ADDR_ID1",
+										"type": "bigint"
+									},
+									{
+										"key": "10",
+										"name": "V_D_ADDR_ID2",
+										"type": "bigint"
+									},
+									{
+										"key": "11",
+										"name": "V_D_ADDR_ID3",
+										"type": "bigint"
+									},
+									{
+										"key": "12",
+										"name": "V_D_POS_ID",
+										"type": "bigint"
+									},
+									{
+										"key": "13",
+										"name": "V_D_SUPER_POSID",
+										"type": "bigint"
+									},
+									{
+										"key": "14",
+										"name": "V_D_FAMILY_ID",
+										"type": "bigint"
+									}
+								],
+								"truncated": false
+							},
+							"isSummary": false,
+							"language": "scala"
+						},
+						"persist_state": {
+							"view": {
+								"type": "details",
+								"chartOptions": {
+									"chartType": "bar",
+									"aggregationType": "sum",
+									"categoryFieldKeys": [
+										"0"
+									],
+									"seriesFieldKeys": [
+										"9"
+									],
+									"isStacked": false
+								}
+							}
+						}
+					},
+					"14695a41-949c-40ab-b965-37e30e4069ec": {
+						"type": "Synapse.DataFrame",
+						"sync_state": {
+							"table": {
+								"rows": [
+									{
+										"0": "FINWARE",
+										"1": "Smp_001",
+										"2": "sample_test",
+										"3": "2023-01-17 00:00:00",
+										"4": "FINWARE_001",
+										"5": "Finware amount1",
+										"7": "2022-01-01 00:00:00",
+										"8": "2024-12-01 00:00:00",
+										"9": "12",
+										"10": "13",
+										"11": "14",
+										"12": "15",
+										"13": "16",
+										"14": "17",
+										"15": "12",
+										"16": "102",
+										"17": "2231",
+										"18": "2023-01-17",
+										"19": "2023-01-24 17:37:22.473"
+									},
+									{
+										"0": "FINWARE",
+										"1": "Smp_002",
+										"2": "sample_test2",
+										"3": "2023-01-17 00:00:00",
+										"4": "FINWARE_002",
+										"5": "Finware amount2",
+										"7": "2023-01-01 00:00:00",
+										"8": "2025-12-01 00:00:00",
+										"9": "20",
+										"10": "21",
+										"11": "22",
+										"12": "23",
+										"13": "24",
+										"14": "25",
+										"15": "12",
+										"16": "102",
+										"17": "2231",
+										"18": "2023-01-17",
+										"19": "2023-01-24 17:37:22.473"
+									}
+								],
+								"schema": [
+									{
+										"key": "0",
+										"name": "FINWARE",
+										"type": "string"
+									},
+									{
+										"key": "1",
+										"name": "V_F_FW_REL_ACCOUNT_NBR",
+										"type": "string"
+									},
+									{
+										"key": "2",
+										"name": "V_D_FIC_CUSTOMER_REF_CODE",
+										"type": "string"
+									},
+									{
+										"key": "3",
+										"name": "D_F_FW_REL_MIS_DATE",
+										"type": "timestamp"
+									},
+									{
+										"key": "4",
+										"name": "V_F_FW_REL_CUSTOMER_REF_CODE",
+										"type": "string"
+									},
+									{
+										"key": "5",
+										"name": "F_F_FW_REL_ACCT_CUST_REL",
+										"type": "string"
+									},
+									{
+										"key": "6",
+										"name": "V_F_FW_REL_PROD_TYPE",
+										"type": "string"
+									},
+									{
+										"key": "7",
+										"name": "D_F_FW_REL_ACCT_OPEN_DATE",
+										"type": "timestamp"
+									},
+									{
+										"key": "8",
+										"name": "D_F_FW_REL_ACCT_CLOSED_DATE",
+										"type": "timestamp"
+									},
+									{
+										"key": "9",
+										"name": "V_D_ADDR_ID1",
+										"type": "bigint"
+									},
+									{
+										"key": "10",
+										"name": "V_D_ADDR_ID2",
+										"type": "bigint"
+									},
+									{
+										"key": "11",
+										"name": "V_D_ADDR_ID3",
+										"type": "bigint"
+									},
+									{
+										"key": "12",
+										"name": "V_D_POS_ID",
+										"type": "bigint"
+									},
+									{
+										"key": "13",
+										"name": "V_D_SUPER_POSID",
+										"type": "bigint"
+									},
+									{
+										"key": "14",
+										"name": "V_D_FAMILY_ID",
+										"type": "bigint"
+									},
+									{
+										"key": "15",
+										"name": "sys_row_id",
+										"type": "int"
+									},
+									{
+										"key": "16",
+										"name": "JOB_STRM_ID",
+										"type": "int"
+									},
+									{
+										"key": "17",
+										"name": "JOB_RUN_ID",
+										"type": "int"
+									},
+									{
+										"key": "18",
+										"name": "BUSINESS_DT",
+										"type": "string"
+									},
+									{
+										"key": "19",
+										"name": "LOAD_TS",
+										"type": "timestamp"
+									}
+								],
+								"truncated": false
+							},
+							"isSummary": false,
+							"language": "scala"
+						},
+						"persist_state": {
+							"view": {
+								"type": "details",
+								"chartOptions": {
+									"chartType": "bar",
+									"aggregationType": "sum",
+									"categoryFieldKeys": [
+										"0"
+									],
+									"seriesFieldKeys": [
+										"9"
+									],
+									"isStacked": false
+								}
+							}
+						}
+					},
+					"acffb813-e063-41ba-8ef3-45ac8daa8ccb": {
+						"type": "Synapse.DataFrame",
+						"sync_state": {
+							"table": {
+								"rows": [
+									{
+										"0": "FINWARE",
+										"1": "Smp_001",
+										"2": "sample_test",
+										"3": "2023-01-17 00:00:00",
+										"4": "FINWARE_001",
+										"5": "Finware amount1",
+										"7": "2022-01-01 00:00:00",
+										"8": "2024-12-01 00:00:00",
+										"9": "12",
+										"10": "13",
+										"11": "14",
+										"12": "15",
+										"13": "16",
+										"14": "17",
+										"15": "12",
+										"16": "102",
+										"17": "2231",
+										"18": "2023-01-17",
+										"19": "2023-01-24 17:37:37.89"
+									},
+									{
+										"0": "FINWARE",
+										"1": "Smp_002",
+										"2": "sample_test2",
+										"3": "2023-01-17 00:00:00",
+										"4": "FINWARE_002",
+										"5": "Finware amount2",
+										"7": "2023-01-01 00:00:00",
+										"8": "2025-12-01 00:00:00",
+										"9": "20",
+										"10": "21",
+										"11": "22",
+										"12": "23",
+										"13": "24",
+										"14": "25",
+										"15": "12",
+										"16": "102",
+										"17": "2231",
+										"18": "2023-01-17",
+										"19": "2023-01-24 17:37:37.89"
+									}
+								],
+								"schema": [
+									{
+										"key": "0",
+										"name": "FINWARE",
+										"type": "string"
+									},
+									{
+										"key": "1",
+										"name": "V_F_FW_REL_ACCOUNT_NBR",
+										"type": "string"
+									},
+									{
+										"key": "2",
+										"name": "V_D_FIC_CUSTOMER_REF_CODE",
+										"type": "string"
+									},
+									{
+										"key": "3",
+										"name": "D_F_FW_REL_MIS_DATE",
+										"type": "timestamp"
+									},
+									{
+										"key": "4",
+										"name": "V_F_FW_REL_CUSTOMER_REF_CODE",
+										"type": "string"
+									},
+									{
+										"key": "5",
+										"name": "F_F_FW_REL_ACCT_CUST_REL",
+										"type": "string"
+									},
+									{
+										"key": "6",
+										"name": "V_F_FW_REL_PROD_TYPE",
+										"type": "string"
+									},
+									{
+										"key": "7",
+										"name": "D_F_FW_REL_ACCT_OPEN_DATE",
+										"type": "timestamp"
+									},
+									{
+										"key": "8",
+										"name": "D_F_FW_REL_ACCT_CLOSED_DATE",
+										"type": "timestamp"
+									},
+									{
+										"key": "9",
+										"name": "V_D_ADDR_ID1",
+										"type": "bigint"
+									},
+									{
+										"key": "10",
+										"name": "V_D_ADDR_ID2",
+										"type": "bigint"
+									},
+									{
+										"key": "11",
+										"name": "V_D_ADDR_ID3",
+										"type": "bigint"
+									},
+									{
+										"key": "12",
+										"name": "V_D_POS_ID",
+										"type": "bigint"
+									},
+									{
+										"key": "13",
+										"name": "V_D_SUPER_POSID",
+										"type": "bigint"
+									},
+									{
+										"key": "14",
+										"name": "V_D_FAMILY_ID",
+										"type": "bigint"
+									},
+									{
+										"key": "15",
+										"name": "sys_row_id",
+										"type": "int"
+									},
+									{
+										"key": "16",
+										"name": "JOB_STRM_ID",
+										"type": "int"
+									},
+									{
+										"key": "17",
+										"name": "JOB_RUN_ID",
+										"type": "int"
+									},
+									{
+										"key": "18",
+										"name": "BUSINESS_DT",
+										"type": "string"
+									},
+									{
+										"key": "19",
+										"name": "LOAD_TS",
+										"type": "timestamp"
+									}
+								],
+								"truncated": false
+							},
+							"isSummary": false,
+							"language": "scala"
+						},
+						"persist_state": {
+							"view": {
+								"type": "details",
+								"chartOptions": {
+									"chartType": "bar",
+									"aggregationType": "sum",
+									"categoryFieldKeys": [
+										"0"
+									],
+									"seriesFieldKeys": [
+										"9"
+									],
+									"isStacked": false
+								}
+							}
+						}
+					}
+				}
+			},
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/5e1710be-d771-4d37-99ce-6a947eb5b32f/resourceGroups/rgETLMigration/providers/Microsoft.Synapse/workspaces/etlmigpocws/bigDataPools/ETLMigrationPOC",
+				"name": "ETLMigrationPOC",
+				"type": "Spark",
+				"endpoint": "https://etlmigpocws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/ETLMigrationPOC",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.3",
+				"nodeCount": 10,
+				"cores": 4,
+				"memory": 28,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# spark.sql(\"set spark.sql.legacy.timeParserPolicy=LEGACY\")"
+				],
+				"execution_count": 1
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"import os;\r\n",
+					"from pyspark.sql import *\r\n",
+					"from pyspark.sql.functions import *\r\n",
+					"# from Mapplets import Mapplets\r\n",
+					"from pyspark import SparkContext;\r\n",
+					"from pyspark.sql.session import SparkSession\r\n",
+					"\r\n",
+					"\r\n",
+					"## Could not run below - as we cannot assign multple context.\r\n",
+					"# sc = SparkContext('local')\r\n",
+					"# spark = SparkSession(sc)\r\n",
+					"\r\n",
+					"\r\n",
+					"## Informatica Variables Declaration\r\n",
+					"MART_DB = 'dbo_'\r\n",
+					"BUSINESS_DT = '2023-01-17'\r\n",
+					"JOB_STRM_ID = 102\r\n",
+					"JOB_RUN_ID = 2231\r\n",
+					"sys_row_id = 12\r\n",
+					"\r\n",
+					"\r\n",
+					"## Variables Declaration\r\n",
+					"Src_AccountURL = 'etlmigpocadls'\r\n",
+					"Src_Container = 'etlmigpocdatalake'\r\n",
+					"Src_Path = '_StaleFiles'\r\n",
+					"\r\n",
+					"\r\n",
+					"\r\n",
+					"\r\n",
+					"Src_URL = 'abfss://{0}@{1}.dfs.core.windows.net/{2}/'.format(Src_Container, Src_AccountURL, Src_Path)\r\n",
+					"Tgt_URL = 'abfss://{0}@{1}.dfs.core.windows.net/{2}/Output/FCT_ALL_RELATIONSHIPS/'.format(Src_Container, Src_AccountURL, Src_Path)\r\n",
+					"print(\"Source URL : \" + Src_URL)\r\n",
+					"print(\"Target URL : \" + Tgt_URL)\r\n",
+					"\r\n",
+					"\r\n",
+					"DIM_DEDUPED_CUSTOMER_url = Src_URL + 'DIM_DEDUPED_CUSTOMER.parquet'\r\n",
+					"INT_FW_RELATIONSHIP_url = Src_URL + 'INT_FW_RELATIONSHIP.parquet'\r\n",
+					"\r\n",
+					"print('DIM_DEDUPED_CUSTOMER url : ' + DIM_DEDUPED_CUSTOMER_url)\r\n",
+					"print('INT_FW_RELATIONSHIP url : ' + INT_FW_RELATIONSHIP_url)\r\n",
+					"\r\n",
+					"\r\n",
+					"## Reading the data from Datalake\r\n",
+					"df_DIM_DEDUPED_CUSTOMER = spark.read.format('parquet').load(DIM_DEDUPED_CUSTOMER_url)\r\n",
+					"df_INT_FW_RELATIONSHIP = spark.read.format('parquet').load(INT_FW_RELATIONSHIP_url)\r\n",
+					"\r\n",
+					"\r\n",
+					"## Converting into Temp Tables\r\n",
+					"df_DIM_DEDUPED_CUSTOMER.createOrReplaceTempView(\"dbo_DIM_DEDUPED_CUSTOMER\")\r\n",
+					"df_INT_FW_RELATIONSHIP.createOrReplaceTempView(\"dbo_INT_FW_RELATIONSHIP\")"
+				],
+				"execution_count": 2
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"## Preparation of SourceQuery\r\n",
+					"\r\n",
+					"SourceQuery = f\"\"\"select A.* \r\n",
+					"/* ,CAST(max_key + ROW_NUMBER() OVER(ORDER BY A.V_F_FW_REL_ACCOUNT_NBR) AS BIGINT) KEY_ID */\r\n",
+					"from \r\n",
+					"/* (select NVL(max(FCT_ALL_RELATIONSHIPS_ID),0) AS max_key from {MART_DB}FCT_ALL_RELATIONSHIPS) tgt, */\r\n",
+					"(SELECT \r\n",
+					"'FINWARE',\r\n",
+					"T1.V_F_FW_REL_ACCOUNT_NBR,\r\n",
+					"T2.V_D_FIC_CUSTOMER_REF_CODE, \r\n",
+					"T1.D_F_FW_REL_MIS_DATE, \r\n",
+					"T1.V_F_FW_REL_CUSTOMER_REF_CODE,\r\n",
+					"T1.F_F_FW_REL_ACCT_CUST_REL,\r\n",
+					"T1.V_F_FW_REL_PROD_TYPE,\r\n",
+					"T1.D_F_FW_REL_ACCT_OPEN_DATE,\r\n",
+					"T1.D_F_FW_REL_ACCT_CLOSED_DATE,\r\n",
+					"T2.V_D_ADDR_ID1,\r\n",
+					"T2.V_D_ADDR_ID2,\r\n",
+					"T2.V_D_ADDR_ID3,\r\n",
+					"T2.V_D_POS_ID,\r\n",
+					"T2.V_D_SUPER_POSID,\r\n",
+					"T2.V_D_FAMILY_ID\r\n",
+					"FROM \r\n",
+					"(SELECT * FROM {MART_DB}INT_FW_RELATIONSHIP\r\n",
+					"/*WHERE D_F_FW_REL_MIS_DATE = TO_DATE({BUSINESS_DT},'YYYYMMDD')) T1,*/\r\n",
+					"WHERE D_F_FW_REL_MIS_DATE = TO_DATE('{BUSINESS_DT}')) T1,\r\n",
+					"{MART_DB}DIM_DEDUPED_CUSTOMER  T2\r\n",
+					"WHERE\tT1.V_F_FW_REL_CUSTOMER_REF_CODE = T2.V_D_SRC_CUSTOMER_REF_CODE \r\n",
+					"AND T2.V_D_SRC_SYSTEM_NAME ='FINWARE'  \r\n",
+					"/*AND TO_DATE('{BUSINESS_DT}','YYYYMMDD') BETWEEN T2.D_D_CUSTOMER_REC_START_DATE AND T2.D_D_CUSTOMER_REC_END_DATE */\r\n",
+					"AND TO_DATE('{BUSINESS_DT}') BETWEEN T2.D_D_CUSTOMER_REC_START_DATE AND T2.D_D_CUSTOMER_REC_END_DATE \r\n",
+					"AND T2.F_D_CUSTOMER_CURR_REC_FLG='Y'\r\n",
+					") A\"\"\""
+				],
+				"execution_count": 3
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"## Reading data from Oracle\r\n",
+					"## Transformation : Source Qualifier\r\n",
+					"SQ_Shortcut_to_INT_FW_RELATIONSHIP = spark.sql(SourceQuery)\r\n",
+					"display(SQ_Shortcut_to_INT_FW_RELATIONSHIP)\r\n",
+					""
+				],
+				"execution_count": 4
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"## Transformation : Expression - Addl. Col.s\r\n",
+					"\r\n",
+					"## BB Output Code\r\n",
+					"# EXP_FCT_ALL_RELATIONSHIPS_FW = SQ_Shortcut_to_INT_FW_RELATIONSHIP.select( \\\r\n",
+					"# \t# SQ_Shortcut_to_INT_FW_RELATIONSHIP.sys_row_id.alias('sys_row_id'), \\\r\n",
+					"# \t# JOB_STRM_ID.alias('JOB_STRM_ID'), \\\r\n",
+					"# \t# JOB_RUN_ID.alias('JOB_RUN_ID'), \\\r\n",
+					"# \t# (TO_DATE(BUSINESS_DT , lit('YYYYMMDD'))).alias('BUSINESS_DT'), \\\r\n",
+					"# \tSQ_Shortcut_to_INT_FW_RELATIONSHIP.SESSSTARTTIME.alias('LOAD_TS') \\\r\n",
+					"# )\r\n",
+					"\r\n",
+					"\r\n",
+					"\r\n",
+					"EXP_FCT_ALL_RELATIONSHIPS_FW = SQ_Shortcut_to_INT_FW_RELATIONSHIP.withColumn(\"sys_row_id\", lit(sys_row_id)).withColumn(\"JOB_STRM_ID\", lit(JOB_STRM_ID)).withColumn(\"JOB_RUN_ID\", lit(JOB_RUN_ID)).withColumn(\"BUSINESS_DT\", lit(BUSINESS_DT)).withColumn(\"LOAD_TS\", current_timestamp())\r\n",
+					"display(EXP_FCT_ALL_RELATIONSHIPS_FW)"
+				],
+				"execution_count": 5
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"### Writing Data to Target File\r\n",
+					"\r\n",
+					"## BB OutPutCode\r\n",
+					"# Shortcut_to_FCT_ALL_RELATIONSHIPS_FW = EXP_FCT_ALL_RELATIONSHIPS_FW.select('*')\r\n",
+					"# Shortcut_to_FCT_ALL_RELATIONSHIPS_FW.write.mode('append').jdbc(os.environ.get('_CONNECT_STRING'), \"\"\"FCT_ALL_RELATIONSHIPS\"\"\", properties={'user': os.environ.get('_LOGIN'), 'password': os.environ.get('_PASSWORD'), 'driver': os.environ.get('_DRIVER')})\r\n",
+					"\r\n",
+					"EXP_FCT_ALL_RELATIONSHIPS_FW.write.format(\"delta\").mode(\"overwrite\").save(Tgt_URL)\r\n",
+					"\r\n",
+					"# #  df.write.format('delta').mode('overwrite').save(TargetLocation)"
+				],
+				"execution_count": 6
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"## Reading data from TargetFile\r\n",
+					"df = spark.read.format(\"delta\").load(Tgt_URL)\r\n",
+					"display(df)"
+				],
+				"execution_count": 7
+			}
+		]
+	}
+}
