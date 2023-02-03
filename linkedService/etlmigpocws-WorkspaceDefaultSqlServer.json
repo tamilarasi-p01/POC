@@ -12,7 +12,7 @@
 			"connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=etlmigpocws.sql.azuresynapse.net;Initial Catalog=@{linkedService().DBName}"
 		},
 		"connectVia": {
-			"referenceName": "AutoResolveIntegrationRuntime",
+			"referenceName": "integrationRuntime1",
 			"type": "IntegrationRuntimeReference"
 		}
 	},
