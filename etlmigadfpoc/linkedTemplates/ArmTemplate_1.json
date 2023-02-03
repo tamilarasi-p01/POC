@@ -1,0 +1,2485 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "etlmigadfpoc"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_LS_SHIR_AzureSQLAuth')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SHIR_AzureSQLAuth",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"ServerName": "@dataset().ServerName",
+						"DatabaseName": "@dataset().DatabaseName",
+						"UserName": "@dataset().UserName",
+						"KeyVaultURL": "@dataset().KeyVaultURL",
+						"SecretName": "@dataset().SecretName"
+					}
+				},
+				"parameters": {
+					"ServerName": {
+						"type": "string"
+					},
+					"DatabaseName": {
+						"type": "string"
+					},
+					"UserName": {
+						"type": "string"
+					},
+					"KeyVaultURL": {
+						"type": "string"
+					},
+					"SecretName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_LS_SHIR_CSV_ADLSGen2')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SHIR_CSV_ADLSGen2",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"BaseURL": "https://etlmigpocadls.dfs.core.windows.net/"
+					}
+				},
+				"parameters": {
+					"BaseURL": {
+						"type": "string"
+					},
+					"Container": {
+						"type": "string"
+					},
+					"folderPath": {
+						"type": "string"
+					},
+					"fileName": {
+						"type": "string"
+					},
+					"Escape": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().fileName",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().folderPath",
+							"type": "Expression"
+						},
+						"fileSystem": {
+							"value": "@dataset().Container",
+							"type": "Expression"
+						}
+					},
+					"columnDelimiter": ",",
+					"escapeChar": {
+						"value": "@dataset().Escape",
+						"type": "Expression"
+					},
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_LS_SRC_AzureSQLDWH')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_AzureSQLDWH",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"ServerName": "@dataset().ServerName",
+						"DBName": "@dataset().DBName"
+					}
+				},
+				"parameters": {
+					"SchemaName": {
+						"type": "string"
+					},
+					"TableName": {
+						"type": "string"
+					},
+					"DBName": {
+						"type": "string"
+					},
+					"ServerName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": {
+						"value": "@dataset().SchemaName",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().TableName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_LS_SRC_Metadata')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_LS_TGT_Metadata')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_TGT_Metadata",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "Config",
+					"table": "tblDQValidationStg"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/3_1_DQValidation')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Log DQ Validation Start",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[Config].[usp_Loadlog]",
+							"storedProcedureParameters": {
+								"JobID": {
+									"value": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"message": {
+									"value": {
+										"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' and type:',string(pipeline().parameters.ExecutionTypeNum),' Started')",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"pipelinename": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SRC_Metadata",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Log DQ Validation End",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "If Max Iteration or DQ Failed",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[Config].[usp_Loadlog]",
+							"storedProcedureParameters": {
+								"JobID": {
+									"value": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"message": {
+									"value": {
+										"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' and type:',string(pipeline().parameters.ExecutionTypeNum),' Completed')",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"pipelinename": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SRC_Metadata",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Get DQ Metadata",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Log DQ Validation Start",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT DISTINCT\n\t(CASE WHEN ISJSON(C.ConnectionURL)=1 THEN REPLACE(JSON_VALUE(C.ConnectionURL,'$.\"Account URI\"'),'/'+FD.Container,'') END) AS AccountURL\n\t,FD.Container\n\t,FD.FilePath\nFROM Config.tblDQCheck AS DQ\nINNER JOIN Config.tblfiledataset AS FD ON DQ.FiledatasetID = FD.FiledatasetID\nINNER JOIN Config.tblConnection AS C ON FD.ConnectionID = C.ConnectionID\nINNER JOIN Config.tblfiletypes AS F ON FD.Filetypeid = F.FiletypeID\nWHERE DQ.JobID = @{pipeline().parameters.JobID}\nAND DQ.IsActive = 1\nOR FD.FileName = 'validation_email'\n",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_LS_SRC_Metadata",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "Copy DQ Validation",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Get DQ Metadata",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"wildcardFolderPath": {
+										"value": "@activity('Get DQ Metadata').output.firstrow.FilePath",
+										"type": "Expression"
+									},
+									"wildcardFileName": "*.parquet",
+									"enablePartitionDiscovery": false
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"preCopyScript": "DROP TABLE IF EXISTS [Config].[tblDQValidationStg]\nCREATE TABLE [Config].[tblDQValidationStg]\n(\n\t[JobId]          INT NOT NULL,\n\t[DQEntityId]     INT NOT NULL,\n\t[Status]         NVARCHAR(50) NOT NULL,\n\t[emailbody]      NVARCHAR(MAX) NOT NULL,\n\t[IsActive]       INT NOT NULL,\n\t[ValidationTime] DATETIME NOT NULL\n)",
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_LS_SHIR_ADLSGen2",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_LS_TGT_Metadata",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Until DQValidation Proceed",
+						"type": "Until",
+						"dependsOn": [
+							{
+								"activity": "Insert DQValidation SP",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@or(or(equals(int(variables('DQValidation')),1),equals(int(variables('DQValidation')),-1)),greaterOrEquals(int(variables('i')),12))",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Get DQValidation",
+									"type": "Lookup",
+									"dependsOn": [
+										{
+											"activity": "Set i",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "DECLARE @JobId INT \n\t,@ExecutionTypeNum INT\n        ,@JobStartTime DATETIME\n\nSET @JobId = @{pipeline().parameters.JobID}\nSET @ExecutionTypeNum = @{pipeline().parameters.ExecutionTypeNum}\n\nSELECT @JobStartTime = Starttime\nFROM Config.tblCurrentExecution\nWHERE JobId = @JobId\nAND ExecutionType = 'Job'\n\nIF EXISTS (SELECT\n\t\t*\n\tFROM Config.tblDQValidation DV\n\tINNER JOIN Config.tblDQCheck DC\n\t\tON DV.JobId = DC.JobID\n\t\tAND DV.DQEntityId = DC.DQEntityId\n\tWHERE DV.JobId = @JobId\n\tAND DV.ValidationTime >= @JobStartTime\n\tAND (CASE WHEN DC.DQType = 'DQPreDelta' THEN 3 WHEN DC.DQType = 'DQPrePublish' THEN 5 END) = @ExecutionTypeNum\n\tAND DC.Typeofvalidation = 'Threshold'\n\tAND DV.DQValidation = 0)\nBEGIN\n\tSELECT 0 AS DQValidation\nEND\nELSE IF EXISTS (SELECT\n\t\t*\n\tFROM Config.tblDQValidation DV\n\tINNER JOIN Config.tblDQCheck DC\n\t\tON DV.JobId = DC.JobID\n\t\tAND DV.DQEntityId = DC.DQEntityId\n\tWHERE DV.JobId = @JobId\n\tAND DV.ValidationTime >= @JobStartTime\n\tAND (CASE WHEN DC.DQType = 'DQPreDelta' THEN 3 WHEN DC.DQType = 'DQPrePublish' THEN 5 END) = @ExecutionTypeNum\n\tAND DC.Typeofvalidation = 'Threshold'\n\tAND DV.DQValidation = -1)\nBEGIN\n\tSELECT -1 AS DQValidation\nEND\nELSE\nBEGIN\n\tSELECT 1 AS DQValidation\nEND",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "DS_LS_SRC_Metadata",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								},
+								{
+									"name": "If DQValiation Failed",
+									"type": "IfCondition",
+									"dependsOn": [
+										{
+											"activity": "Set DQValidation",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@equals(int(variables('DQValidation')),0)",
+											"type": "Expression"
+										},
+										"ifTrueActivities": [
+											{
+												"name": "Wait",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 600
+												}
+											}
+										]
+									}
+								},
+								{
+									"name": "Set DQValidation",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Get DQValidation",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "DQValidation",
+										"value": {
+											"value": "@string(activity('Get DQValidation').output.firstrow.DQValidation)",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Set i",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "i",
+										"value": {
+											"value": "@string(add(int(variables('j')),1))",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Set j",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "If DQValiation Failed",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "j",
+										"value": {
+											"value": "@variables('i')",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"timeout": "7.00:00:00"
+						}
+					},
+					{
+						"name": "If Max Iteration or DQ Failed",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "Until DQValidation Proceed",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@or(equals(int(variables('DQValidation')),-1),greaterOrEquals(int(variables('i')),12))",
+								"type": "Expression"
+							},
+							"ifTrueActivities": [
+								{
+									"name": "Force Failure",
+									"type": "Lookup",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "DECLARE @JobId INT\n\t,@ExecutionTypeNum INT\n\t,@ErrorMessage NVARCHAR(MAX)\n\nSET @JobId = @{pipeline().parameters.JobID}\nSET @ExecutionTypeNum = @{pipeline().parameters.ExecutionTypeNum}\n\nSET @ErrorMessage = 'DQCheck is failed for JobId:'+CAST(@JobId AS NVARCHAR(10))+',ExecutionTypeNum:'+CAST(@ExecutionTypeNum AS NVARCHAR(10))\n\nRAISERROR(@ErrorMessage,11,1)\n\nSELECT 1 AS Num",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "DS_LS_SRC_Metadata",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "Insert DQValidation SP",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Copy DQ Validation",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[Config].[usp_Insert_DQValidation]",
+							"storedProcedureParameters": {
+								"JobID": {
+									"value": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SRC_Metadata",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"JobID": {
+						"type": "Int"
+					},
+					"MetadataServerName": {
+						"type": "string"
+					},
+					"MetadataDatabaseName": {
+						"type": "string"
+					},
+					"ExecutionTypeNum": {
+						"type": "int"
+					}
+				},
+				"variables": {
+					"DQValidation": {
+						"type": "String"
+					},
+					"i": {
+						"type": "String",
+						"defaultValue": "0"
+					},
+					"j": {
+						"type": "String",
+						"defaultValue": "0"
+					}
+				},
+				"folder": {
+					"name": "3_IntegrationOrchestration"
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-01-17T13:41:23Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_LS_SRC_Metadata')]",
+				"[concat(variables('factoryId'), '/datasets/DS_LS_TGT_Metadata')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/3_2_IntegratePriorityOrchestration')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get Priority Integration Metadata",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Log Integrate Priority Orchestration Start",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT DISTINCT IntegrationId FROM Config.vwIntegrationMetadata \nWHERE ISExecute = 1 \nAND JobID = @{pipeline().parameters.JobId} \nAND ExecutionTypeNum = @{pipeline().parameters.ExecutionTypeNum} \nAND ISNULL([Priority],0)= @{pipeline().parameters.Priority} \nAND [status] IN ('Ready','Failed','Inprogress')\nORDER BY IntegrationId",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_LS_SRC_Metadata",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "ForEach Integration Orchestration",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get Priority Integration Metadata",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Priority Integration Metadata').output.value",
+								"type": "Expression"
+							},
+							"isSequential": false,
+							"batchCount": 50,
+							"activities": [
+								{
+									"name": "Execute Create Integrate Views",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "Get Integration Metadata",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "3_3_CreateIntegrateViews",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"Priority": {
+												"value": "@pipeline().parameters.Priority",
+												"type": "Expression"
+											},
+											"JobID": {
+												"value": "@pipeline().parameters.JobID",
+												"type": "Expression"
+											},
+											"MetadataServerName": {
+												"value": "@pipeline().parameters.MetadataServerName",
+												"type": "Expression"
+											},
+											"MetadataDatabaseName": {
+												"value": "@pipeline().parameters.MetadataDatabaseName",
+												"type": "Expression"
+											},
+											"ExecutionTypeNum": {
+												"value": "@pipeline().parameters.ExecutionTypeNum",
+												"type": "Expression"
+											},
+											"i": {
+												"value": "@pipeline().parameters.i",
+												"type": "Expression"
+											},
+											"IntegrationId": {
+												"value": "@activity('Get Integration Metadata').output.firstRow.IntegrationId",
+												"type": "Expression"
+											},
+											"ExecutionName": {
+												"value": "@activity('Get Integration Metadata').output.firstRow.ExecutionName",
+												"type": "Expression"
+											},
+											"ExecutionParameters": {
+												"value": "@activity('Get Integration Metadata').output.firstRow.ExecutionParameters",
+												"type": "Expression"
+											},
+											"DBName": {
+												"value": "@activity('Get Integration Metadata').output.firstRow.DBName",
+												"type": "Expression"
+											},
+											"ProcessingId": {
+												"value": "@activity('Get Integration Metadata').output.firstRow.ProcessingId",
+												"type": "Expression"
+											},
+											"ProcessingType": {
+												"value": "@activity('Get Integration Metadata').output.firstRow.ProcessingType",
+												"type": "Expression"
+											},
+											"ClusterName": {
+												"value": "@activity('Get Integration Metadata').output.firstRow.ClusterName",
+												"type": "Expression"
+											},
+											"SQLDWHServerName": {
+												"value": "@pipeline().parameters.SQLDWHServerName",
+												"type": "Expression"
+											},
+											"SQLDWHDatabaseName": {
+												"value": "@pipeline().parameters.SQLDWHDatabaseName",
+												"type": "Expression"
+											}
+										}
+									}
+								},
+								{
+									"name": "UpdateStatus_Fail",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "Execute Create Integrate Views",
+											"dependencyConditions": [
+												"Failed"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[Config].[usp_UpdateExecutionStatus]",
+										"storedProcedureParameters": {
+											"ExecutionTypeId": {
+												"value": {
+													"value": "@activity('Get Integration Metadata').output.firstRow.IntegrationId",
+													"type": "Expression"
+												},
+												"type": "Int32"
+											},
+											"JobId": {
+												"value": {
+													"value": "@pipeline().parameters.JobID",
+													"type": "Expression"
+												},
+												"type": "Int32"
+											},
+											"Status": {
+												"value": "Failed",
+												"type": "String"
+											},
+											"ExecutionType": {
+												"value": "Integration",
+												"type": "String"
+											},
+											"ErrorMessage": {
+												"value": {
+													"value": "@activity('Execute Create Integrate Views').error.message",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"PipelineRunId": {
+												"value": {
+													"value": "@activity('Execute Create Integrate Views').output.pipelinerunid",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"NotebookName": {
+												"value": {
+													"value": "@activity('Get Integration Metadata').output.firstRow.ExecutionName",
+													"type": "Expression"
+												},
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "LS_SRC_Metadata",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "UpdateStatus_Success",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "Execute Create Integrate Views",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[Config].[usp_UpdateExecutionStatus]",
+										"storedProcedureParameters": {
+											"ExecutionTypeId": {
+												"value": {
+													"value": "@activity('Get Integration Metadata').output.firstRow.IntegrationId",
+													"type": "Expression"
+												},
+												"type": "Int32"
+											},
+											"JobId": {
+												"value": {
+													"value": "@pipeline().parameters.JobID",
+													"type": "Expression"
+												},
+												"type": "Int32"
+											},
+											"Status": {
+												"value": "Success",
+												"type": "String"
+											},
+											"ExecutionType": {
+												"value": "Integration",
+												"type": "String"
+											},
+											"PipelineRunId": {
+												"value": {
+													"value": "@activity('Execute Create Integrate Views').output.pipelinerunid",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"NotebookName": {
+												"value": {
+													"value": "@activity('Get Integration Metadata').output.firstRow.ExecutionName",
+													"type": "Expression"
+												},
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "LS_SRC_Metadata",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Get Integration Metadata",
+									"type": "Lookup",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "SELECT * FROM Config.vwIntegrationMetadata \nWHERE JobId = @{pipeline().parameters.JobId}\nAND ExecutionTypeNum = @{pipeline().parameters.ExecutionTypeNum}\nAND Priority = @{pipeline().parameters.Priority}\nAND IntegrationId = @{item().IntegrationId}",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "DS_LS_SRC_Metadata",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "Log Integrate Priority Orchestration Start",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[Config].[usp_Loadlog]",
+							"storedProcedureParameters": {
+								"JobID": {
+									"value": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"message": {
+									"value": {
+										"value": "@concat(pipeline().Pipeline, ' for JobId:',string(pipeline().parameters.JobID),' execution type :',string(pipeline().parameters.ExecutionTypeNum),' and \n Priority:',string(pipeline().parameters.Priority) ,'Started')",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"pipelinename": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SRC_Metadata",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Log Integrate Priority Orchestration End",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "ForEach Integration Orchestration",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[Config].[usp_Loadlog]",
+							"storedProcedureParameters": {
+								"JobID": {
+									"value": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"message": {
+									"value": {
+										"value": "@concat(pipeline().Pipeline, ' for JobId:',string(pipeline().parameters.JobID),' execution type :',string(pipeline().parameters.ExecutionTypeNum),' and \n Priority:',string(pipeline().parameters.Priority) ,' Completed')",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"pipelinename": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SRC_Metadata",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"JobId": {
+						"type": "Int"
+					},
+					"Priority": {
+						"type": "int"
+					},
+					"MetadataServerName": {
+						"type": "string"
+					},
+					"MetadataDatabaseName": {
+						"type": "string"
+					},
+					"ExecutionTypeNum": {
+						"type": "int"
+					},
+					"i": {
+						"type": "int"
+					},
+					"SQLDWHServerName": {
+						"type": "string"
+					},
+					"SQLDWHDatabaseName": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "3_IntegrationOrchestration"
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-01-30T02:24:52Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_LS_SRC_Metadata')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/3_1_IntegrateTypeOrchestration')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Log Integrate Type Orchestration Start",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[Config].[usp_Loadlog]",
+							"storedProcedureParameters": {
+								"JobID": {
+									"value": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"message": {
+									"value": {
+										"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' and type:',string(pipeline().parameters.ExecutionTypeNum),' Started')",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"pipelinename": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SRC_Metadata",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Log Integrate Type Orchestration End",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "If IsFailed",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[Config].[usp_Loadlog]",
+							"storedProcedureParameters": {
+								"JobID": {
+									"value": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"message": {
+									"value": {
+										"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' and type:',string(pipeline().parameters.ExecutionTypeNum),' Completed')",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"pipelinename": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SRC_Metadata",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Until Success for Priority Zero",
+						"type": "Until",
+						"dependsOn": [
+							{
+								"activity": "Log Integrate Type Orchestration Start",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(int(variables('PrevFailureCount')),int(variables('CurrentFailureCount')))",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Execute Integrate Priority Orchestration Zero Priority",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "Set i",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "3_2_IntegratePriorityOrchestration",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"JobId": {
+												"value": "@pipeline().parameters.JobID",
+												"type": "Expression"
+											},
+											"Priority": {
+												"value": "0",
+												"type": "Expression"
+											},
+											"MetadataServerName": {
+												"value": "@pipeline().parameters.MetadataServerName",
+												"type": "Expression"
+											},
+											"MetadataDatabaseName": {
+												"value": "@pipeline().parameters.MetadataDatabaseName",
+												"type": "Expression"
+											},
+											"ExecutionTypeNum": {
+												"value": "@pipeline().parameters.ExecutionTypeNum",
+												"type": "Expression"
+											},
+											"i": {
+												"value": "@int(variables('i'))",
+												"type": "Expression"
+											},
+											"SQLDWHServerName": {
+												"value": "@pipeline().parameters.SQLDWHServerName",
+												"type": "Expression"
+											},
+											"SQLDWHDatabaseName": {
+												"value": "@pipeline().parameters.SQLDWHDatabaseName",
+												"type": "Expression"
+											}
+										}
+									}
+								},
+								{
+									"name": "Get Failure Count",
+									"type": "Lookup",
+									"dependsOn": [
+										{
+											"activity": "Set Previous Failure Count",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "SELECT COUNT(*) AS FailureCount\nFROM Config.vwIntegrationMetadata\nWHERE JOBID = @{pipeline().parameters.JobID}\nAND ExecutionTypeNum = @{pipeline().parameters.ExecutionTypeNum}\nAND Status = 'Failed'",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "DS_LS_SRC_Metadata",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								},
+								{
+									"name": "Set Current Failure Count",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Get Failure Count",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "CurrentFailureCount",
+										"value": {
+											"value": "@string(activity('Get Failure Count').output.firstrow.FailureCount)",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Set Previous Failure Count",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Execute Integrate Priority Orchestration Zero Priority",
+											"dependencyConditions": [
+												"Completed"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "PrevFailureCount",
+										"value": {
+											"value": "@variables('CurrentFailureCount')",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Set i",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "i",
+										"value": {
+											"value": "@string(add(int(variables('j')),1))",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Set j",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Set Current Failure Count",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "j",
+										"value": {
+											"value": "@variables('i')",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"timeout": "7.00:00:00"
+						}
+					},
+					{
+						"name": "Get Integration Status",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Until Success for Priority Zero",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[Config].[usp_GetJobIntegrationStatus]",
+							"storedProcedureParameters": {
+								"ExecutionTypeNum": {
+									"value": {
+										"value": "@pipeline().parameters.ExecutionTypeNum",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"JobId": {
+									"value": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"Priority": {
+									"value": "0",
+									"type": "Int32"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SRC_Metadata",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Reset i",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Get Integration Status",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "i",
+							"value": {
+								"value": "0",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Reset j",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Get Integration Status",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "j",
+							"value": {
+								"value": "0",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Until Priority Integration Completed",
+						"type": "Until",
+						"dependsOn": [
+							{
+								"activity": "Reset i",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Reset j",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@or(bool(variables('IsFailed')),equals(int(variables('PendingCount')),0))",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Set variable i",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "i",
+										"value": {
+											"value": "@string(add(int(variables('j')),1))",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Get Pending Count",
+									"type": "Lookup",
+									"dependsOn": [
+										{
+											"activity": "Execute Integrate Priority Orchestration",
+											"dependencyConditions": [
+												"Completed"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "SELECT COUNT(*) AS PendingCount FROM Config.vwIntegrationMetadata WHERE ISExecute = 1 AND JobID = @{pipeline().parameters.JobID} AND ExecutionTypeNum = @{pipeline().parameters.ExecutionTypeNum} AND [status]='Ready'",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "DS_LS_SRC_Metadata",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								},
+								{
+									"name": "Set Pending Count",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Get Pending Count",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "PendingCount",
+										"value": {
+											"value": "@string(activity('Get Pending Count').output.firstRow.PendingCount)",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Set variable j",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Set Pending Count",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										},
+										{
+											"activity": "Set Priority Failure Count",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "j",
+										"value": {
+											"value": "@variables('i')",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Execute Integrate Priority Orchestration",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "Set variable i",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "3_2_IntegratePriorityOrchestration",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"JobId": {
+												"value": "@pipeline().parameters.JobID",
+												"type": "Expression"
+											},
+											"Priority": {
+												"value": "@int(variables('i'))",
+												"type": "Expression"
+											},
+											"MetadataServerName": {
+												"value": "@pipeline().parameters.MetadataServerName",
+												"type": "Expression"
+											},
+											"MetadataDatabaseName": {
+												"value": "@pipeline().parameters.MetadataDatabaseName",
+												"type": "Expression"
+											},
+											"ExecutionTypeNum": {
+												"value": "@pipeline().parameters.ExecutionTypeNum",
+												"type": "Expression"
+											},
+											"i": {
+												"value": "@int(variables('i'))",
+												"type": "Expression"
+											},
+											"SQLDWHServerName": {
+												"value": "@pipeline().parameters.SQLDWHServerName",
+												"type": "Expression"
+											},
+											"SQLDWHDatabaseName": {
+												"value": "@pipeline().parameters.SQLDWHDatabaseName",
+												"type": "Expression"
+											}
+										}
+									}
+								},
+								{
+									"name": "Set IsFailed",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Execute Integrate Priority Orchestration",
+											"dependencyConditions": [
+												"Failed"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "IsFailed",
+										"value": "true"
+									}
+								},
+								{
+									"name": "Get Priority Failure Count",
+									"type": "Lookup",
+									"dependsOn": [
+										{
+											"activity": "Execute Integrate Priority Orchestration",
+											"dependencyConditions": [
+												"Completed"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "SELECT COUNT(*) AS PendingCount FROM Config.vwIntegrationMetadata WHERE ISExecute = 1 AND JobID = @{pipeline().parameters.JobID} AND ExecutionTypeNum = @{pipeline().parameters.ExecutionTypeNum} AND [status]='Failed'",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "DS_LS_SRC_Metadata",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								},
+								{
+									"name": "Set Priority Failure Count",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Get Priority Failure Count",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "CurrentFailureCount",
+										"value": {
+											"value": "@string(activity('Get Priority Failure Count').output.firstRow.PendingCount)",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"timeout": "7.00:00:00"
+						}
+					},
+					{
+						"name": "If IsFailed",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "Until Priority Integration Completed",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@and(bool(variables('IsFailed')),greater(int(variables('CurrentFailureCount')),0))",
+								"type": "Expression"
+							},
+							"ifTrueActivities": [
+								{
+									"name": "Force Failure",
+									"type": "Lookup",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "DECLARE @JobId INT\n\t,@ExecutionTypeNum INT\n\t,@Priority INT\n\t,@ErrorMessage NVARCHAR(MAX)\n\nSET @JobId = @{pipeline().parameters.JobID}\nSET @ExecutionTypeNum = @{pipeline().parameters.ExecutionTypeNum}\nSET @Priority = @{int(variables('i'))}\n\nSET @ErrorMessage = 'IntegrationTypeOrchestration is failed for JobId:'+CAST(@JobId AS NVARCHAR(10))+',ExecutionTypeNum:'+CAST(@ExecutionTypeNum AS NVARCHAR(10))+',Priority:'+CAST(@Priority AS NVARCHAR(10))\n\nRAISERROR(@ErrorMessage,11,1)\n\nSELECT 1 AS Num",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "DS_LS_SRC_Metadata",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"JobID": {
+						"type": "Int"
+					},
+					"MetadataServerName": {
+						"type": "string"
+					},
+					"MetadataDatabaseName": {
+						"type": "string"
+					},
+					"ExecutionTypeNum": {
+						"type": "int"
+					},
+					"SQLDWHServerName": {
+						"type": "string"
+					},
+					"SQLDWHDatabaseName": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"PrevFailureCount": {
+						"type": "String",
+						"defaultValue": "-1"
+					},
+					"CurrentFailureCount": {
+						"type": "String",
+						"defaultValue": "0"
+					},
+					"i": {
+						"type": "String",
+						"defaultValue": "0"
+					},
+					"j": {
+						"type": "String",
+						"defaultValue": "0"
+					},
+					"PendingCount": {
+						"type": "String",
+						"defaultValue": "0"
+					},
+					"IsFailed": {
+						"type": "String",
+						"defaultValue": "false"
+					}
+				},
+				"folder": {
+					"name": "3_IntegrationOrchestration"
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-01-17T13:41:31Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/3_2_IntegratePriorityOrchestration')]",
+				"[concat(variables('factoryId'), '/datasets/DS_LS_SRC_Metadata')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/3_IntegrateOrchestration')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Log Integrate Orchestration Start",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[Config].[usp_Loadlog]",
+							"storedProcedureParameters": {
+								"JobID": {
+									"value": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"message": {
+									"value": {
+										"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' Started')",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"pipelinename": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SRC_Metadata",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Log Integrate Orchestration End",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "If IsFailed",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[Config].[usp_Loadlog]",
+							"storedProcedureParameters": {
+								"JobID": {
+									"value": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"message": {
+									"value": {
+										"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' Completed')",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"pipelinename": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SRC_Metadata",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Until Integration Completed",
+						"type": "Until",
+						"dependsOn": [
+							{
+								"activity": "Get SQL Schema",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@or(bool(variables('IsFailed')),equals(int(variables('PendingCount')),0))",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Set i",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "i",
+										"value": {
+											"value": "@string(add(int(variables('j')),1))",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Get Pending Count",
+									"type": "Lookup",
+									"dependsOn": [
+										{
+											"activity": "If DQCheck",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "SELECT COUNT(*) AS PendingCount FROM Config.vwIntegrationMetadata WHERE ISExecute = 1 AND JobID = @{pipeline().parameters.JobID} AND [status]='Ready'",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "DS_LS_SRC_Metadata",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								},
+								{
+									"name": "Set Pending Count",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Get Pending Count",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "PendingCount",
+										"value": {
+											"value": "@string(activity('Get Pending Count').output.firstRow.PendingCount)",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Set j",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Set Pending Count",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "j",
+										"value": {
+											"value": "@variables('i')",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Set IsFailed Integration",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "If Execution Type",
+											"dependencyConditions": [
+												"Failed"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "IsFailed",
+										"value": "true"
+									}
+								},
+								{
+									"name": "If DQCheck",
+									"type": "IfCondition",
+									"dependsOn": [
+										{
+											"activity": "If Execution Type",
+											"dependencyConditions": [
+												"Completed"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@and(greater(int(variables('TypeCount')),0),or(equals(int(variables('i')),3),equals(int(variables('i')),5)))",
+											"type": "Expression"
+										},
+										"ifTrueActivities": [
+											{
+												"name": "Execute DQValidation",
+												"type": "ExecutePipeline",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"pipeline": {
+														"referenceName": "3_1_DQValidation",
+														"type": "PipelineReference"
+													},
+													"waitOnCompletion": true,
+													"parameters": {
+														"JobID": {
+															"value": "@pipeline().parameters.JobID",
+															"type": "Expression"
+														},
+														"MetadataServerName": {
+															"value": "@pipeline().parameters.MetadataServerName",
+															"type": "Expression"
+														},
+														"MetadataDatabaseName": {
+															"value": "@pipeline().parameters.MetadataDatabaseName",
+															"type": "Expression"
+														},
+														"ExecutionTypeNum": {
+															"value": "@int(variables('i'))",
+															"type": "Expression"
+														}
+													}
+												}
+											}
+										]
+									}
+								},
+								{
+									"name": "Get Execution Type Count",
+									"type": "Lookup",
+									"dependsOn": [
+										{
+											"activity": "Set i",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "SELECT COUNT(*) AS PendingCount FROM Config.vwIntegrationMetadata \nWHERE ISExecute = 1 \nAND JobID = @{pipeline().parameters.JobID} \nAND ExecutionTypeNum = @{int(variables('i'))} \nAND [status]='Ready'",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "DS_LS_SRC_Metadata",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								},
+								{
+									"name": "Set Type Count",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Get Execution Type Count",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "TypeCount",
+										"value": {
+											"value": "@string(activity('Get Execution Type Count').output.firstrow.PendingCount)",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "If Execution Type",
+									"type": "IfCondition",
+									"dependsOn": [
+										{
+											"activity": "Set Type Count",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@greater(int(variables('TypeCount')),0)",
+											"type": "Expression"
+										},
+										"ifTrueActivities": [
+											{
+												"name": "Execute Integrate Type Orchestration",
+												"type": "ExecutePipeline",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"pipeline": {
+														"referenceName": "3_1_IntegrateTypeOrchestration",
+														"type": "PipelineReference"
+													},
+													"waitOnCompletion": true,
+													"parameters": {
+														"JobID": {
+															"value": "@pipeline().parameters.JobID",
+															"type": "Expression"
+														},
+														"MetadataServerName": {
+															"value": "@pipeline().parameters.MetadataServerName",
+															"type": "Expression"
+														},
+														"MetadataDatabaseName": {
+															"value": "@pipeline().parameters.MetadataDatabaseName",
+															"type": "Expression"
+														},
+														"ExecutionTypeNum": {
+															"value": "@int(variables('i'))",
+															"type": "Expression"
+														},
+														"SQLDWHServerName": {
+															"value": "@pipeline().parameters.SQLDWHServerName",
+															"type": "Expression"
+														},
+														"SQLDWHDatabaseName": {
+															"value": "@pipeline().parameters.SQLDWHDatabaseName",
+															"type": "Expression"
+														}
+													}
+												}
+											}
+										]
+									}
+								},
+								{
+									"name": "Set IsFailed DQCheck",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "If DQCheck",
+											"dependencyConditions": [
+												"Failed"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "IsFailed",
+										"value": "true"
+									}
+								},
+								{
+									"name": "Set Error Message Integration",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Set IsFailed Integration",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "ErrorMessage",
+										"value": {
+											"value": "@concat('IntegrationTypeOrchestration is failed for JobId:',string(pipeline().parameters.JobID),',ExecutionTypeNum:',variables('i'))",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Set Error Message DQCheck",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Set IsFailed DQCheck",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "ErrorMessage",
+										"value": {
+											"value": "@concat('DQCheck is failed for JobId:',string(pipeline().parameters.JobID),',ExecutionTypeNum:',variables('i'))",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"timeout": "7.00:00:00"
+						}
+					},
+					{
+						"name": "If IsFailed",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "Until Integration Completed",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@bool(variables('IsFailed'))",
+								"type": "Expression"
+							},
+							"ifTrueActivities": [
+								{
+									"name": "Force Failure",
+									"type": "Lookup",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "DECLARE @ErrorMessage NVARCHAR(MAX)\n\nSET @ErrorMessage = '@{variables('ErrorMessage')}'\n\nRAISERROR(@ErrorMessage,11,1)\n\nSELECT 1 AS Num",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "DS_LS_SRC_Metadata",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "Get SQL Schema",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Update MMS DQ Status",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT DISTINCT TargetDBName\nFROM Config.tblSparkEntities\nWHERE JobID = @{pipeline().parameters.JobID}\nAND IsActive = 1\nAND IsSqlTable = 1",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_LS_SRC_Metadata",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Update MMS DQ Status",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Log Integrate Orchestration Start",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "DECLARE @JobId INT\n\nSET @JobId = @{pipeline().parameters.JobID}\n\nUPDATE CE SET Status = 'Skipped',CE.ErrorMessage = 'Skipped due to MMS acquisition is skipped' \nFROM Config.tblCurrentExecution CE\nINNER JOIN Config.tblIntegration I ON CE.JobId = I.JobId AND CE.ExecutionTypeId = I.IntegrationId\nINNER JOIN Config.tblDQCheck DQ ON I.JobId = DQ.JobID AND I.ProcessingId = DQ.DQEntityId\nCROSS APPLY STRING_SPLIT(JSON_VALUE(DQ.Parameters,'$.\"SourceUnmanagedTables\"'),',') UM\nINNER JOIN Config.tblQuery Q ON UM.[value] = Q.SourceTableName\nWHERE CE.JobId = @JobId\nAND CE.ExecutionType = 'Integration'\nAND DQ.Typeofvalidation = 'MMSComparison'\nAND EXISTS (SELECT 1\n\t\t\tFROM Config.tblCurrentExecution CEQ\n\t\t\tWHERE CEQ.JobId = CE.JobId\n\t\t\tAND CEQ.ExecutionTypeId = Q.QueryID\n\t\t\tAND CEQ.ExecutionType = 'Query'\n\t\t\tAND CEQ.Status = 'Skipped')\n\nSELECT @@rowcount AS Cnt\n",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_LS_SRC_Metadata",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"JobID": {
+						"type": "Int",
+						"defaultValue": 123
+					},
+					"MetadataServerName": {
+						"type": "string",
+						"defaultValue": "etlmigpocasql.database.windows.net"
+					},
+					"MetadataDatabaseName": {
+						"type": "string",
+						"defaultValue": "Migration"
+					},
+					"SQLDWHServerName": {
+						"type": "string",
+						"defaultValue": "etlmigpocws.sql.azuresynapse.net"
+					},
+					"SQLDWHDatabaseName": {
+						"type": "string",
+						"defaultValue": "etlmigpocDWH"
+					},
+					"ForEachParallelism": {
+						"type": "int",
+						"defaultValue": 50
+					}
+				},
+				"variables": {
+					"IsFailed": {
+						"type": "String",
+						"defaultValue": "false"
+					},
+					"PendingCount": {
+						"type": "String",
+						"defaultValue": "-1"
+					},
+					"i": {
+						"type": "String",
+						"defaultValue": "0"
+					},
+					"j": {
+						"type": "String",
+						"defaultValue": "0"
+					},
+					"TypeCount": {
+						"type": "String",
+						"defaultValue": "0"
+					},
+					"ErrorMessage": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "3_IntegrationOrchestration"
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-01-17T16:42:44Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_LS_SRC_Metadata')]",
+				"[concat(variables('factoryId'), '/pipelines/3_1_DQValidation')]",
+				"[concat(variables('factoryId'), '/pipelines/3_1_IntegrateTypeOrchestration')]"
+			]
+		}
+	]
+}

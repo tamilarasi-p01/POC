@@ -1,0 +1,54 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "etlmigadfpoc"
+		},
+		"AzureDatabricks1_accessToken": {
+			"value": ""
+		},
+		"LS_SHIR_AzureSQL_connectionString": {
+			"value": ""
+		},
+		"LS_SHIR_AzureSQLAuth_connectionString": {
+			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=@{linkedService().ServerName};Initial Catalog=@{linkedService().DatabaseName};User ID=@{linkedService().UserName}"
+		},
+		"LS_SRC_AzureSQLDWH_connectionString": {
+			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=etlmigpocws.sql.azuresynapse.net;Initial Catalog=etlmigpocDWH"
+		},
+		"LS_SRC_Metadata_connectionString": {
+			"value": ""
+		},
+		"LS_TGT_Metadata_connectionString": {
+			"value": ""
+		},
+		"POCGithub_credential": {
+			"value": ""
+		},
+		"etlmigpocws-WorkspaceDefaultSqlServer_connectionString": {
+			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:etlmigpocws.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"LS_KeyVault_properties_typeProperties_baseUrl": {
+			"value": "@{linkedService().BaseURL}"
+		},
+		"LS_SHIR_ADLSGen2_properties_typeProperties_url": {
+			"value": "https://etlmigpocadls.dfs.core.windows.net/"
+		},
+		"LS_SHIR_CSV_ADLSGen2_properties_typeProperties_url": {
+			"value": "@{linkedService().BaseURL}"
+		},
+		"POCGithub_properties_typeProperties_username": {
+			"value": "azuser"
+		},
+		"etlmigpocws-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"value": "https://etlmigpocadls.dfs.core.windows.net"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}

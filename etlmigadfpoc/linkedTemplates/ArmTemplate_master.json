@@ -1,0 +1,156 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "etlmigadfpoc"
+		},
+		"AzureDatabricks1_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'AzureDatabricks1'"
+		},
+		"LS_SHIR_AzureSQL_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_SHIR_AzureSQL'"
+		},
+		"LS_SHIR_AzureSQLAuth_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_SHIR_AzureSQLAuth'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=@{linkedService().ServerName};Initial Catalog=@{linkedService().DatabaseName};User ID=@{linkedService().UserName}"
+		},
+		"LS_SRC_AzureSQLDWH_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_SRC_AzureSQLDWH'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=etlmigpocws.sql.azuresynapse.net;Initial Catalog=etlmigpocDWH"
+		},
+		"LS_SRC_Metadata_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_SRC_Metadata'"
+		},
+		"LS_TGT_Metadata_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_TGT_Metadata'"
+		},
+		"POCGithub_credential": {
+			"type": "secureString",
+			"metadata": "Secure string for 'credential' of 'POCGithub'"
+		},
+		"etlmigpocws-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'etlmigpocws-WorkspaceDefaultSqlServer'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:etlmigpocws.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"LS_KeyVault_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "@{linkedService().BaseURL}"
+		},
+		"LS_SHIR_ADLSGen2_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://etlmigpocadls.dfs.core.windows.net/"
+		},
+		"LS_SHIR_CSV_ADLSGen2_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "@{linkedService().BaseURL}"
+		},
+		"POCGithub_properties_typeProperties_username": {
+			"type": "string",
+			"defaultValue": "azuser"
+		},
+		"etlmigpocws-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://etlmigpocadls.dfs.core.windows.net"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "etlmigadfpoc_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"AzureDatabricks1_accessToken": {
+						"value": "[parameters('AzureDatabricks1_accessToken')]"
+					},
+					"LS_SHIR_AzureSQL_connectionString": {
+						"value": "[parameters('LS_SHIR_AzureSQL_connectionString')]"
+					},
+					"LS_SHIR_AzureSQLAuth_connectionString": {
+						"value": "[parameters('LS_SHIR_AzureSQLAuth_connectionString')]"
+					},
+					"LS_SRC_AzureSQLDWH_connectionString": {
+						"value": "[parameters('LS_SRC_AzureSQLDWH_connectionString')]"
+					},
+					"LS_SRC_Metadata_connectionString": {
+						"value": "[parameters('LS_SRC_Metadata_connectionString')]"
+					},
+					"LS_TGT_Metadata_connectionString": {
+						"value": "[parameters('LS_TGT_Metadata_connectionString')]"
+					},
+					"POCGithub_credential": {
+						"value": "[parameters('POCGithub_credential')]"
+					},
+					"etlmigpocws-WorkspaceDefaultSqlServer_connectionString": {
+						"value": "[parameters('etlmigpocws-WorkspaceDefaultSqlServer_connectionString')]"
+					},
+					"LS_KeyVault_properties_typeProperties_baseUrl": {
+						"value": "[parameters('LS_KeyVault_properties_typeProperties_baseUrl')]"
+					},
+					"LS_SHIR_ADLSGen2_properties_typeProperties_url": {
+						"value": "[parameters('LS_SHIR_ADLSGen2_properties_typeProperties_url')]"
+					},
+					"LS_SHIR_CSV_ADLSGen2_properties_typeProperties_url": {
+						"value": "[parameters('LS_SHIR_CSV_ADLSGen2_properties_typeProperties_url')]"
+					},
+					"POCGithub_properties_typeProperties_username": {
+						"value": "[parameters('POCGithub_properties_typeProperties_username')]"
+					},
+					"etlmigpocws-WorkspaceDefaultStorage_properties_typeProperties_url": {
+						"value": "[parameters('etlmigpocws-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "etlmigadfpoc_ArmTemplate_1",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_1.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'etlmigadfpoc_ArmTemplate_0')]"
+			]
+		}
+	]
+}
