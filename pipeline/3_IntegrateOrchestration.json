@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Log Integrate Orchestration Start ",
+				"name": "Log Integrate Orchestration Start",
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [],
 				"policy": {
@@ -536,7 +536,7 @@
 				"type": "Lookup",
 				"dependsOn": [
 					{
-						"activity": "Log Integrate Orchestration Start ",
+						"activity": "Log Integrate Orchestration Start",
 						"dependencyConditions": [
 							"Succeeded"
 						]

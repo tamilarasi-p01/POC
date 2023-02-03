@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Log DQ Validation Start ",
+				"name": "Log DQ Validation Start",
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [],
 				"policy": {
@@ -100,7 +100,7 @@
 				"type": "Lookup",
 				"dependsOn": [
 					{
-						"activity": "Log DQ Validation Start ",
+						"activity": "Log DQ Validation Start",
 						"dependencyConditions": [
 							"Succeeded"
 						]
