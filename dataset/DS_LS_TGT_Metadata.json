@@ -1,0 +1,17 @@
+{
+	"name": "DS_LS_TGT_Metadata",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_TGT_Metadata",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "Config",
+			"table": "tblDQValidationStg"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}
