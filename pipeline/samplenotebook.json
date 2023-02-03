@@ -15,7 +15,13 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/Shared/Test"
+					"notebookPath": "/Shared/Notebook 1",
+					"baseParameters": {
+						"param": {
+							"value": "@pipeline().parameters.testParam",
+							"type": "Expression"
+						}
+					}
 				},
 				"linkedServiceName": {
 					"referenceName": "AzureDatabricks1",
@@ -23,6 +29,12 @@
 				}
 			}
 		],
+		"parameters": {
+			"testParam": {
+				"type": "string",
+				"defaultValue": "Hello World"
+			}
+		},
 		"annotations": [],
 		"lastPublishTime": "2023-02-01T16:02:59Z"
 	},
