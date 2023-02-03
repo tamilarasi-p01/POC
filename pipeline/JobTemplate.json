@@ -1,0 +1,655 @@
+{
+	"name": "JobTemplate",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get the JobId",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT [JobId],[RefreshWaitTimeInSec]\nFROM config.tblJob (NOLOCK)\nWHERE [JobName] = '@{pipeline().parameters.JobName}'\nAND IsActive = 1",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_LS_SRC_Metadata",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Orchestration",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "If Max Iteration",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "1_Orchestration",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"JobID": {
+							"value": "@activity('Get the JOBID').output.firstrow.JobId",
+							"type": "Expression"
+						},
+						"MetadataServerName": {
+							"value": "@pipeline().parameters.MetaDataServerName",
+							"type": "Expression"
+						},
+						"MetadataDatabaseName": {
+							"value": "@pipeline().parameters.MetaDataDatabaseName",
+							"type": "Expression"
+						},
+						"ForEachParallelism": {
+							"value": "@pipeline().parameters.ForEachParallelism",
+							"type": "Expression"
+						},
+						"ForceRestart": {
+							"value": "@pipeline().parameters.ForceRestart",
+							"type": "Expression"
+						},
+						"SkipAcquisition": {
+							"value": "@pipeline().parameters.SkipAcquisition",
+							"type": "Expression"
+						},
+						"SkipUnmanagedTable": {
+							"value": "@pipeline().parameters.SkipUnmanagedTable",
+							"type": "Expression"
+						},
+						"SkipIntegration": {
+							"value": "@pipeline().parameters.SkipIntegration",
+							"type": "Expression"
+						},
+						"SkipPublish": {
+							"value": "@pipeline().parameters.SkipPublish",
+							"type": "Expression"
+						},
+						"RefreshWaitTimeInSec": {
+							"value": "@activity('Get the JobId').output.firstRow.RefreshWaitTimeInSec",
+							"type": "Expression"
+						},
+						"SQLDWHServerName": {
+							"value": "@pipeline().parameters.SQLDWHServerName",
+							"type": "Expression"
+						},
+						"SQLDWHDatabaseName": {
+							"value": "@pipeline().parameters.SQLDWHDatabaseName",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Log Job Start",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "If Job Not Active",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@int(activity('Get the JOBID').output.firstrow.JobId)",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, ' Job Started')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Log Job End",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Orchestration",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@activity('Get the JOBID').output.firstrow.JobId",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, ' Job Completed')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Get the SparkDB Metadata",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Log Job Start",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT (SELECT DISTINCT 'CREATE DATABASE IF NOT EXISTS '+DBName AS DBName FROM Config.vwGetSparkDBMetadata WHERE JobID = @{activity('Get the JOBID').output.firstrow.JobId} AND DBName<>'N/A' AND NULLIF(DBName,'') IS NOT NULL FOR JSON AUTO) AS Script",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_LS_SRC_Metadata",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Create Database",
+				"type": "SynapseNotebook",
+				"dependsOn": [
+					{
+						"activity": "Get the SparkDB Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebook": {
+						"referenceName": "Sample",
+						"type": "NotebookReference"
+					},
+					"parameters": {
+						"Script": {
+							"value": {
+								"value": "@activity('Get the SparkDB Metadata').output.firstRow.Script",
+								"type": "Expression"
+							},
+							"type": "string"
+						}
+					},
+					"conf": {
+						"spark.dynamicAllocation.enabled": null,
+						"spark.dynamicAllocation.minExecutors": null,
+						"spark.dynamicAllocation.maxExecutors": null
+					},
+					"numExecutors": null
+				}
+			},
+			{
+				"name": "Until Dependency Jobs Completed",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "Log Job Start",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(bool(variables('JobRun')),greaterOrEquals(int(variables('i')),12))",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Get Job Run Status",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Set i",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT [Config].[fn_getJobRunStatus](@{activity('Get the JobId').output.firstRow.JobId}) AS JobRun",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_Metadata",
+									"type": "DatasetReference"
+								}
+							}
+						},
+						{
+							"name": "Wait for job",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Set Job Run Status",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@not(bool(variables('JobRun')))",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Wait",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 600
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "Set Job Run Status",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get Job Run Status",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "JobRun",
+								"value": {
+									"value": "@string(activity('Get Job Run Status').output.firstrow.JobRun)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set i",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "i",
+								"value": {
+									"value": "@string(add(int(variables('j')),1))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set j",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Wait for job",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "j",
+								"value": {
+									"value": "@variables('i')",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"timeout": "7.00:00:00"
+				}
+			},
+			{
+				"name": "If Max Iteration",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Until Dependency Jobs Completed",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@and(greaterOrEquals(int(variables('i')),12),not(bool(variables('JobRun'))))",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Force Failure",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "DECLARE @ErrorMessage NVARCHAR(MAX)\n\nSET @ErrorMessage = 'Dependency jobs are not completed for Job:'+'@{pipeline().parameters.JobName}'\n\nRAISERROR(@ErrorMessage,11,1)\n\nSELECT 1 AS Num",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_Metadata",
+									"type": "DatasetReference"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "UpdateStatus_Failure",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Orchestration",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_UpdateExecutionStatus]",
+					"storedProcedureParameters": {
+						"ExecutionType": {
+							"value": "Job",
+							"type": "String"
+						},
+						"ExecutionTypeId": {
+							"value": {
+								"value": "@int(activity('Get the JobId').output.firstRow.JobId)",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"JobId": {
+							"value": {
+								"value": "@int(activity('Get the JobId').output.firstRow.JobId)",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"Status": {
+							"value": "Failed",
+							"type": "String"
+						},
+						"ErrorMessage": {
+							"value": {
+								"value": "@activity('Orchestration').error.message",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineRunId": {
+							"value": {
+								"value": "@activity('Orchestration').output.pipelinerunid",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "If Job Not Active",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Get the JobId",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(contains(activity('Get the JobId').output,'firstRow'))",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Force Failure Not Active",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "DECLARE @ErrorMessage NVARCHAR(MAX)\n\t,@JobName NVARCHAR(50)\n\t,@JobId INT\n\t,@PipelineName NVARCHAR(50)\n\t,@EmailTo NVARCHAR(255)\n\nSET @JobName = '@{pipeline().parameters.JobName}'\nSET @PipelineName = '@{pipeline().Pipeline}'\n\nIF NOT EXISTS (SELECT * FROM Config.tblJob WHERE JobName = @JobName)\nBEGIN\n\tSET @ErrorMessage = 'JobName:'+@JobName+' is not available'\n\tSET @EmailTo = (SELECT Email FROM Config.tblPod WHERE PODName = 'Framework')\n\tSET @JobId = -1\nEND\nELSE IF EXISTS (SELECT * FROM Config.tblJob WHERE JobName = @JobName AND IsActive = 0)\nBEGIN\n\tSET @ErrorMessage = 'JobName:'+@JobName+' is not active'\n\tSET @EmailTo = (SELECT P.Email FROM Config.tblPod P INNER JOIN Config.tblJob J ON P.PODID = J.PodID WHERE J.JobName = @JobName)\n\tSET @JobId = (SELECT JobID FROM Config.tblJob WHERE JobName = @JobName)\nEND\n\nEXEC Config.usp_LoadLog @JobID = @JobId , @message = @ErrorMessage , @pipelinename = @PipelineName\n\n-- Sending Job Failure Status\nINSERT INTO Mail.tblSendEmail\n\t(EmailTo,EmailCC,EmailSubject, EmailBody)\n\tSELECT\n\t\t@EmailTo AS EmailTo\n\t\t,(SELECT\n\t\t\t\tSTRING_AGG(Email, ';')\n\t\t\tFROM Config.tblPod\n\t\t\tWHERE PODName IN ('Framework'))\n\t\tAS Emailcc\n\t\t,CONCAT(UPPER(REPLACE(@@ServerName, 'asql', '')),' JobName:', @JobName, ' Failed') AS Emailsubject\n\t\t,'<p>'+@ErrorMessage+'</p>' AS EmailBody\n\nRAISERROR(@ErrorMessage,11,1)\n\nSELECT 1 AS Num",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_Metadata",
+									"type": "DatasetReference"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"MetaDataServerName": {
+				"type": "string",
+				"defaultValue": "etlmigpocasql.database.windows.net"
+			},
+			"MetaDataDatabaseName": {
+				"type": "string",
+				"defaultValue": "Migration"
+			},
+			"ForEachParallelism": {
+				"type": "int",
+				"defaultValue": 50
+			},
+			"ForceRestart": {
+				"type": "bool",
+				"defaultValue": false
+			},
+			"JobName": {
+				"type": "string",
+				"defaultValue": "POC"
+			},
+			"SkipAcquisition": {
+				"type": "bool",
+				"defaultValue": false
+			},
+			"SkipUnmanagedTable": {
+				"type": "bool",
+				"defaultValue": false
+			},
+			"SkipIntegration": {
+				"type": "bool",
+				"defaultValue": false
+			},
+			"SkipPublish": {
+				"type": "bool",
+				"defaultValue": false
+			},
+			"SkipProcessModel": {
+				"type": "bool",
+				"defaultValue": false
+			},
+			"SQLDWHServerName": {
+				"type": "string",
+				"defaultValue": "tcp:etlmigpocws.sql.azuresynapse.net,1433"
+			},
+			"SQLDWHDatabaseName": {
+				"type": "string",
+				"defaultValue": "etlmigpocdwh"
+			}
+		},
+		"variables": {
+			"JobRun": {
+				"type": "String"
+			},
+			"i": {
+				"type": "String",
+				"defaultValue": "0"
+			},
+			"j": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "Framework/Jobs"
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-01-24T10:59:42Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

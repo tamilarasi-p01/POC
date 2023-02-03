@@ -1,0 +1,1049 @@
+{
+	"name": "1_Orchestration",
+	"properties": {
+		"activities": [
+			{
+				"name": "Log Orchestration Start",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' Started')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Log Orchestration End",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "UpdateStatus_Success",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' Completed')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Populate Control Table",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Log Orchestration Start",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_PopulateControlTables]",
+					"storedProcedureParameters": {
+						"ForceRestart": {
+							"value": {
+								"value": "@pipeline().parameters.ForceRestart",
+								"type": "Expression"
+							},
+							"type": "Boolean"
+						},
+						"ForEachParallelism": {
+							"value": {
+								"value": "@pipeline().parameters.ForEachParallelism",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"JobId": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"SkipAcquisition": {
+							"value": {
+								"value": "@pipeline().parameters.SkipAcquisition",
+								"type": "Expression"
+							},
+							"type": "Boolean"
+						},
+						"SkipIntegration": {
+							"value": {
+								"value": "@pipeline().parameters.SkipIntegration",
+								"type": "Expression"
+							},
+							"type": "Boolean"
+						},
+						"SkipProcessModel": {
+							"value": {
+								"value": "@pipeline().parameters.SkipProcessModel",
+								"type": "Expression"
+							},
+							"type": "Boolean"
+						},
+						"SkipPublish": {
+							"value": {
+								"value": "@pipeline().parameters.SkipPublish",
+								"type": "Expression"
+							},
+							"type": "Boolean"
+						},
+						"PipelineRunId": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SkipUnmanagedTable": {
+							"value": {
+								"value": "@pipeline().parameters.SkipUnmanagedTable",
+								"type": "Expression"
+							},
+							"type": "Boolean"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Execute Integrate Orchestration",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "If UnmanagedTable",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "3_IntegrateOrchestration",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"JobID": {
+							"value": "@pipeline().parameters.JobID",
+							"type": "Expression"
+						},
+						"MetadataServerName": {
+							"value": "@pipeline().parameters.MetadataServerName",
+							"type": "Expression"
+						},
+						"MetadataDatabaseName": {
+							"value": "@pipeline().parameters.MetadataDatabaseName",
+							"type": "Expression"
+						},
+						"SQLDWHServerName": {
+							"value": "@pipeline().parameters.SQLDWHServerName",
+							"type": "Expression"
+						},
+						"SQLDWHDatabaseName": {
+							"value": "@pipeline().parameters.SQLDWHDatabaseName",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "UpdateStatus_Failure_Integration",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Execute Integrate Orchestration",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_UpdateExecutionStatus]",
+					"storedProcedureParameters": {
+						"ExecutionType": {
+							"value": "Job",
+							"type": "String"
+						},
+						"ExecutionTypeId": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"JobId": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"Status": {
+							"value": "Failed",
+							"type": "String"
+						},
+						"ErrorMessage": {
+							"value": {
+								"value": "@activity('Execute Integrate Orchestration').error.message",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineRunId": {
+							"value": {
+								"value": "@activity('Execute Integrate Orchestration').output.pipelinerunid",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "UpdateStatus_Success",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_UpdateExecutionStatus]",
+					"storedProcedureParameters": {
+						"ExecutionType": {
+							"value": "Job",
+							"type": "String"
+						},
+						"ExecutionTypeId": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"JobId": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"Status": {
+							"value": "Success",
+							"type": "String"
+						},
+						"PipelineRunId": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Execute Publish Orchestration",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute Integrate Orchestration",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "4_PublishOrchestration",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"JobID": {
+							"value": "@pipeline().parameters.JobID",
+							"type": "Expression"
+						},
+						"MetadataServerName": {
+							"value": "@pipeline().parameters.MetadataServerName",
+							"type": "Expression"
+						},
+						"MetadataDatabaseName": {
+							"value": "@pipeline().parameters.MetadataDatabaseName",
+							"type": "Expression"
+						},
+						"SQLDWHServerName": {
+							"value": "@pipeline().parameters.SQLDWHServerName",
+							"type": "Expression"
+						},
+						"SQLDWHDatabaseName": {
+							"value": "@pipeline().parameters.SQLDWHDatabaseName",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "UpdateStatus_Failure_Publish",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Execute Publish Orchestration",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_UpdateExecutionStatus]",
+					"storedProcedureParameters": {
+						"ExecutionType": {
+							"value": "Job",
+							"type": "String"
+						},
+						"ExecutionTypeId": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"JobId": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"Status": {
+							"value": "Failed",
+							"type": "String"
+						},
+						"ErrorMessage": {
+							"value": {
+								"value": "@activity('Execute Publish Orchestration').error.message",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineRunId": {
+							"value": {
+								"value": "@activity('Execute Publish Orchestration').output.pipelinerunid",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "If UnmanagedTable",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If Source is not Refreshed",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(pipeline().parameters.SkipUnmanagedTable)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Execute UnmanagedTableCreation",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "2_4_UnmanagedTableCreation",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"JobID": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"MetadataServerName": {
+										"value": "@pipeline().parameters.MetadataServerName",
+										"type": "Expression"
+									},
+									"MetadataDatabaseName": {
+										"value": "@pipeline().parameters.MetadataDatabaseName",
+										"type": "Expression"
+									},
+									"SQLDWHServerName": {
+										"value": "@pipeline().parameters.SQLDWHServerName",
+										"type": "Expression"
+									},
+									"SQLDWHDatabaseName": {
+										"value": "@pipeline().parameters.SQLDWHDatabaseName",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "UpdateStatus_Failure_UnmanagedTable",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Execute UnmanagedTableCreation",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[Config].[usp_UpdateExecutionStatus]",
+								"storedProcedureParameters": {
+									"ExecutionType": {
+										"value": "Job",
+										"type": "String"
+									},
+									"ExecutionTypeId": {
+										"value": {
+											"value": "@pipeline().parameters.JobID",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"JobId": {
+										"value": {
+											"value": "@pipeline().parameters.JobID",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"Status": {
+										"value": "Failed",
+										"type": "String"
+									},
+									"ErrorMessage": {
+										"value": {
+											"value": "@activity('Execute UnmanagedTableCreation').error.message",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"PipelineRunId": {
+										"value": {
+											"value": "@activity('Execute UnmanagedTableCreation').output.pipelinerunid",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_SRC_Metadata",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Wait",
+							"type": "Wait",
+							"dependsOn": [
+								{
+									"activity": "Execute UnmanagedTableCreation",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 1
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Until Source Refreshed",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "Populate Control Table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(equals(int(variables('SourceRefreshed')),1),greaterOrEquals(int(variables('i')),div(pipeline().parameters.RefreshWaitTimeInSec,600)))",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Set i",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "i",
+								"value": {
+									"value": "@string(add(int(variables('j')),1))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Execute SourceRefreshCheck",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Set i",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "1_2_SourceRefreshCheck",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"JobID": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"MetadataServerName": {
+										"value": "@pipeline().parameters.MetadataServerName",
+										"type": "Expression"
+									},
+									"MetadataDatabaseName": {
+										"value": "@pipeline().parameters.MetadataDatabaseName",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "Execute Acquisition Orchestration",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Update Acquisition Status",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "2_AcquisitionOrchestration",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"JobID": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"MetadataServerName": {
+										"value": "@pipeline().parameters.MetadataServerName",
+										"type": "Expression"
+									},
+									"MetadataDatabaseName": {
+										"value": "@pipeline().parameters.MetadataDatabaseName",
+										"type": "Expression"
+									},
+									"SQLDWHServerName": {
+										"value": "@pipeline().parameters.SQLDWHServerName",
+										"type": "Expression"
+									},
+									"SQLDWHDatabaseName": {
+										"value": "@pipeline().parameters.SQLDWHDatabaseName",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "UpdateStatus_Failure_Acquisition",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Execute Acquisition Orchestration",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[Config].[usp_UpdateExecutionStatus]",
+								"storedProcedureParameters": {
+									"ExecutionType": {
+										"value": "Job",
+										"type": "String"
+									},
+									"ExecutionTypeId": {
+										"value": {
+											"value": "@pipeline().parameters.JobID",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"JobId": {
+										"value": {
+											"value": "@pipeline().parameters.JobID",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"Status": {
+										"value": "Failed",
+										"type": "String"
+									},
+									"ErrorMessage": {
+										"value": {
+											"value": "@activity('Execute Acquisition Orchestration').error.message",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"PipelineRunId": {
+										"value": {
+											"value": "@activity('Execute Acquisition Orchestration').output.pipelinerunid",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_SRC_Metadata",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Update Acquisition Status",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Execute SourceRefreshCheck",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "DECLARE @JobID INT\n\nSET @JobID = @{pipeline().parameters.JobID}\n\nUPDATE CE\n\tSET CE.[Status] = \n\t\t\t\t\tCASE\n\t\t\t\t\t\tWHEN SRC.IsSourceRefreshed = 1 AND CE.[Status] = 'Waiting' THEN 'Ready'\n\t\t\t\t\t\tWHEN SRC.IsSourceRefreshed = 0 AND CE.[Status] IN ('Ready','Waiting') THEN 'Waiting'\n\t\t\t\t\t\tELSE CE.[Status]\n\t\t\t\t\tEND\nFROM Config.tblCurrentExecution AS CE\nINNER JOIN Config.tblQuery AS Q ON CE.JobId = Q.JobID AND CE.ExecutionTypeId = Q.QueryID\nINNER JOIN (SELECT\n\t\t\t\tJobId\n\t\t\t\t,Sqldatasetid\n\t\t\t\t,CAST(MIN(CAST(IsSourceRefreshed AS INT)) AS BIT) AS IsSourceRefreshed\n\t\t\tFROM Config.tblsourcerefresh\n\t\t\tWHERE IsActive = 1\n\t\t\tGROUP BY JobId\n\t\t\t\t,Sqldatasetid\n\t\t) SRC ON CE.JobId = SRC.JobID AND Q.Sourcesqldatasetid = SRC.Sqldatasetid\nWHERE CE.JobId = @JobID\nAND CE.ExecutionType = 'Query'\n\n\nSELECT @@rowcount AS Cnt",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_Metadata",
+									"type": "DatasetReference"
+								}
+							}
+						},
+						{
+							"name": "Get Source Refresh Status",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Execute Acquisition Orchestration",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "DECLARE @JobID INT\n\nSET @JobID = @{pipeline().parameters.JobID}\n IF EXISTS (SELECT * FROM Config.tblSourceRefresh WHERE JobId = @JobID AND IsActive = 1  AND IsSourceRefreshed = 0)\n BEGIN\n\tSELECT 0 AS IsSourceRefreshed\n END\n ELSE\n BEGIN\n\tSELECT 1 AS IsSourceRefreshed\n END",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_Metadata",
+									"type": "DatasetReference"
+								}
+							}
+						},
+						{
+							"name": "Set SourceRefreshed",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get Source Refresh Status",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "SourceRefreshed",
+								"value": {
+									"value": "@string(activity('Get Source Refresh Status').output.firstrow.IsSourceRefreshed)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set j",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "If Source not refreshed",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "j",
+								"value": {
+									"value": "@variables('i')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "If Source not refreshed",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Set SourceRefreshed",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(int(variables('SourceRefreshed')),0)",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Wait for source refresh",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 600
+										}
+									}
+								]
+							}
+						}
+					],
+					"timeout": "7.00:00:00"
+				}
+			},
+			{
+				"name": "If Source is not Refreshed",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Until Source Refreshed",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(equals(int(variables('SourceRefreshed')),0),greaterOrEquals(int(variables('i')),div(pipeline().parameters.RefreshWaitTimeInSec,600)))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Reset Source Refresh for next run",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "UPDATE Config.tblsourcerefresh SET IsSourceRefreshed = 0 WHERE JobID = @{pipeline().parameters.JobID} AND IsActive = 1 AND IsSourceRefreshed = 1\r\n\r\nSELECT @@rowcount AS Cnt",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_Metadata",
+									"type": "DatasetReference"
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Update Acquisition Waiting Status",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "DECLARE @JobID INT\n\nSET @JobID = @{pipeline().parameters.JobID}\n\nUPDATE CE\n\tSET CE.[Status] = \n\t\t\t\t\tCASE\n\t\t\t\t\t\tWHEN SRC.AllowStaleData = 0 AND CE.[Status] = 'Waiting' THEN 'Failed'\t\t\t\t\t\t\n\t\t\t\t\t\tELSE 'Skipped'\n\t\t\t\t\tEND\n\t\t,CE.ErrorMessage = \n\t\t\t\t\tCASE\n\t\t\t\t\t\tWHEN SRC.AllowStaleData = 0 AND CE.[Status] = 'Waiting' THEN 'Failed due to source is not refreshed and stale is not allowed'\t\t\t\t\t\t\n\t\t\t\t\t\tELSE 'Skipped due to source is not refreshed'\n\t\t\t\t\tEND\nFROM Config.tblCurrentExecution AS CE\nINNER JOIN Config.tblQuery AS Q ON CE.JobId = Q.JobID AND CE.ExecutionTypeId = Q.QueryID\nINNER JOIN (SELECT\n\t\t\t\tJobId\n\t\t\t\t,Sqldatasetid\n\t\t\t\t,AllowStaleData\n\t\t\t\t,CAST(MIN(CAST(IsSourceRefreshed AS INT)) AS BIT) AS IsSourceRefreshed\n\t\t\tFROM Config.tblsourcerefresh\n\t\t\tWHERE IsActive = 1\n\t\t\tGROUP BY JobId\n\t\t\t\t,Sqldatasetid\n\t\t\t\t,AllowStaleData\n\t\t) SRC ON CE.JobId = SRC.JobID AND Q.Sourcesqldatasetid = SRC.Sqldatasetid\nWHERE CE.JobId = @JobID\nAND CE.ExecutionType = 'Query'\nAND CE.[Status] = 'Waiting'\n\n\nSELECT @@rowcount AS Cnt",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_Metadata",
+									"type": "DatasetReference"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"JobID": {
+				"type": "Int"
+			},
+			"MetadataServerName": {
+				"type": "string"
+			},
+			"MetadataDatabaseName": {
+				"type": "string"
+			},
+			"ForEachParallelism": {
+				"type": "int"
+			},
+			"ForceRestart": {
+				"type": "bool"
+			},
+			"SkipAcquisition": {
+				"type": "bool"
+			},
+			"SkipUnmanagedTable": {
+				"type": "bool"
+			},
+			"SkipIntegration": {
+				"type": "bool"
+			},
+			"SkipPublish": {
+				"type": "bool"
+			},
+			"SkipProcessModel": {
+				"type": "bool"
+			},
+			"RefreshWaitTimeInSec": {
+				"type": "int"
+			},
+			"SQLDWHServerName": {
+				"type": "string"
+			},
+			"SQLDWHDatabaseName": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"SourceRefreshed": {
+				"type": "String"
+			},
+			"i": {
+				"type": "String",
+				"defaultValue": "0"
+			},
+			"j": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "Framework/Template/1_Orchestration"
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-01-19T11:44:45Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

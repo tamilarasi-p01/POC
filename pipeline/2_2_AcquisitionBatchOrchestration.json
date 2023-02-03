@@ -1,0 +1,418 @@
+{
+	"name": "2_2_AcquisitionBatchOrchestration",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Metadata",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Log Acquisition Batch Orchestration Start",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "Select * from  [Config].[vwacquisitionmetadata]  where jobid=@{pipeline().parameters.JobId}\nand priority = @{pipeline().parameters.Priority}\nand batchnumber=@{pipeline().parameters.BatchNumber} \nand status='ready'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_LS_SRC_Metadata",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Iterate the Metadata",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Metadata').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"batchCount": 50,
+					"activities": [
+						{
+							"name": "Switch IntgrationRuntime",
+							"type": "Switch",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"on": {
+									"value": "@item().IntegrationRunTime",
+									"type": "Expression"
+								},
+								"cases": [
+									{
+										"value": "SHIR",
+										"activities": [
+											{
+												"name": "Execute Aqucisition SHIR Entity pipeline",
+												"type": "ExecutePipeline",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"pipeline": {
+														"referenceName": "2_3_AcquisitionSHIR",
+														"type": "PipelineReference"
+													},
+													"waitOnCompletion": true,
+													"parameters": {
+														"SourceQuery": {
+															"value": "@item().SourceQuery\n",
+															"type": "Expression"
+														},
+														"SourceType": {
+															"value": "@item().Sourceconnectiontype",
+															"type": "Expression"
+														},
+														"SourceConnectionName": {
+															"value": "@item().Sourceconnectionname",
+															"type": "Expression"
+														},
+														"SourceServerName": {
+															"value": "@item().Sourceservername",
+															"type": "Expression"
+														},
+														"SourceDatabaseName": {
+															"value": "@item().Sourcedatabasename",
+															"type": "Expression"
+														},
+														"ColumnSchema": {
+															"value": "@item().ColumnSchema",
+															"type": "Expression"
+														},
+														"SourceTableName": {
+															"value": "@item().SourceTableName",
+															"type": "Expression"
+														},
+														"TargetContainer": {
+															"value": "@item().container",
+															"type": "Expression"
+														},
+														"TargetFolderPath": {
+															"value": "@item().Targetfilepath",
+															"type": "Expression"
+														},
+														"TargetFileName": {
+															"value": "@item().targetfilename",
+															"type": "Expression"
+														},
+														"QueryID": {
+															"value": "@item().Entitynumber",
+															"type": "Expression"
+														},
+														"JobID": {
+															"value": "@item().JobID",
+															"type": "Expression"
+														},
+														"MetadataServerName": {
+															"value": "@pipeline().parameters.MetadataServerName",
+															"type": "Expression"
+														},
+														"MetadataDatabaseName": {
+															"value": "@pipeline().parameters.MetadataDatabaseName",
+															"type": "Expression"
+														},
+														"SourceSchemaName": {
+															"value": "@item().SourceSchemaName",
+															"type": "Expression"
+														},
+														"SourceQueryDM": {
+															"value": "@item().SourceQueryDM",
+															"type": "Expression"
+														},
+														"TargetAccountURL": {
+															"value": "@item().TargetAccountURL",
+															"type": "Expression"
+														},
+														"KeyVaultURL": {
+															"value": "@item().KeyVaultURL",
+															"type": "Expression"
+														},
+														"UserName": {
+															"value": "@item().UserName",
+															"type": "Expression"
+														},
+														"SecretName": {
+															"value": "@item().SecretName",
+															"type": "Expression"
+														},
+														"TargetFolderPathCSV": {
+															"value": "@item().CSVfilepath",
+															"type": "Expression"
+														},
+														"TargetFileNameCSV": {
+															"value": "@item().CSVfilename",
+															"type": "Expression"
+														},
+														"IsDelta": {
+															"value": "@item().IsDelta",
+															"type": "Expression"
+														},
+														"DeltaDefaultValue": {
+															"value": "@item().DeltaDefaultValue",
+															"type": "Expression"
+														},
+														"LatestFilePath": {
+															"value": "@item().LatestFilePath",
+															"type": "Expression"
+														},
+														"SparkDBName": {
+															"value": "@item().SparkDBname",
+															"type": "Expression"
+														},
+														"IsExternalTableInSql": {
+															"value": "@item().Isexternaltblinsql",
+															"type": "Expression"
+														},
+														"IsUnmanagedTableInSpark": {
+															"value": "@item().IsUnmanagedTableInSpark",
+															"type": "Expression"
+														},
+														"DeltaQuery": {
+															"value": "@item().DeltaQuery",
+															"type": "Expression"
+														},
+														"SourceLinkedServiceName": {
+															"value": "@item().SourceLinkedServiceName",
+															"type": "Expression"
+														},
+														"SQLDWHServerName": {
+															"value": "@pipeline().parameters.SQLDWHServerName",
+															"type": "Expression"
+														},
+														"SQLDWHDatabaseName": {
+															"value": "@pipeline().parameters.SQLDWHDatabaseName",
+															"type": "Expression"
+														}
+													}
+												}
+											},
+											{
+												"name": "updatestatus",
+												"type": "SqlServerStoredProcedure",
+												"dependsOn": [
+													{
+														"activity": "Execute Aqucisition SHIR Entity pipeline",
+														"dependencyConditions": [
+															"Completed"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "7.00:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"storedProcedureName": "[Config].[usp_UpdateExecutionStatus]",
+													"storedProcedureParameters": {
+														"JobId": {
+															"value": {
+																"value": "@pipeline().parameters.JobID",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														},
+														"ExecutionTypeId": {
+															"value": {
+																"value": "@item().QueryID",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														},
+														"Status": {
+															"value": {
+																"value": "@if(equals(activity('Execute Aqucisition SHIR Entity pipeline').status,'Failed'),'Failed','Success')",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"ExecutionType": {
+															"value": "Query",
+															"type": "String"
+														},
+														"ErrorMessage": {
+															"value": {
+																"value": "@if(equals(activity('Execute Aqucisition SHIR Entity pipeline').status,'Failed'),activity('Execute Aqucisition SHIR Entity pipeline').error.message,null)",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"PipelineRunId": {
+															"value": {
+																"value": "@activity('Execute Aqucisition SHIR Entity pipeline').output.pipelinerunid",
+																"type": "Expression"
+															},
+															"type": "String"
+														}
+													}
+												},
+												"linkedServiceName": {
+													"referenceName": "LS_SRC_Metadata",
+													"type": "LinkedServiceReference"
+												}
+											}
+										]
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Log Acquisition Batch Orchestration Start",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),'and \n Batch number',string(pipeline().parameters.BatchNumber) ,'Started')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Log Acquisition Batch Orchestration End",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Iterate the Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),'and \n Batch number',string(pipeline().parameters.BatchNumber) ,'Completed')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"JobId": {
+				"type": "Int"
+			},
+			"BatchNumber": {
+				"type": "int"
+			},
+			"MetadataServerName": {
+				"type": "string"
+			},
+			"MetadataDatabaseName": {
+				"type": "string"
+			},
+			"Priority": {
+				"type": "string"
+			},
+			"SQLDWHServerName": {
+				"type": "string"
+			},
+			"SQLDWHDatabaseName": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Framework/Template/2_AcquisitionOrchestration"
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-01-19T10:32:18Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

@@ -1,0 +1,551 @@
+{
+	"name": "2_4_UnmanagedTableCreation",
+	"properties": {
+		"activities": [
+			{
+				"name": "Log UnamanagedTableCreation End",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "ForEach Create Unmanaged Table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "ForEach Create External Table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' Completed')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Get Metadata for Unmanaged Table",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Log UnmanagedTableCreation Start",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT DISTINCT batchnumber\nFROM Config.vwacquisitionmetadata\nWHERE JobID = @{pipeline().parameters.JobID}\nAND IsUnmanagedTableInSpark = 1\nAND Status IN ('Success','Flipped')",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_LS_SRC_Metadata",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach Create Unmanaged Table",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata for Unmanaged Table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Metadata for Unmanaged Table').output.value",
+						"type": "Expression"
+					},
+					"batchCount": 50,
+					"activities": [
+						{
+							"name": "CreateUnmanagedTable",
+							"type": "SynapseNotebook",
+							"dependsOn": [
+								{
+									"activity": "Get Unmanaged Table Metadata",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebook": {
+									"referenceName": "CreateUnmanagedTable",
+									"type": "NotebookReference"
+								},
+								"parameters": {
+									"Script": {
+										"value": {
+											"value": "@activity('Get Unmanaged Table Metadata').output.firstrow.Script",
+											"type": "Expression"
+										},
+										"type": "string"
+									}
+								},
+								"conf": {
+									"spark.dynamicAllocation.enabled": null,
+									"spark.dynamicAllocation.minExecutors": null,
+									"spark.dynamicAllocation.maxExecutors": null
+								},
+								"numExecutors": null
+							}
+						},
+						{
+							"name": "Get Unmanaged Table Metadata",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT\n(\n\tSELECT DISTINCT\n\t\t'DROP TABLE IF EXISTS ' + SparkDBname + '.' + REPLACE(SourceTableName,'-','_') AS DropTableScript\n\t\t,CreateTableScript\n\tFROM Config.vwacquisitionmetadata\n\tWHERE JobID = @{pipeline().parameters.JobID}\n\tAND batchnumber = @{item().batchnumber}\n\tAND IsUnmanagedTableInSpark = 1\n\tAND Status IN ('Success','Flipped')\n\tFOR JSON AUTO\n) AS Script",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_Metadata",
+									"type": "DatasetReference"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Get ExternalTable Metadata",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Log UnmanagedTableCreation Start",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT DISTINCT\n\tSparkDBName\n   ,SourceTableName\n   ,Sourceconnectiontype\n   ,ColumnSchema\n   ,container\n   ,TargetAccountURL\n   ,TargetFiletype\n   ,Targetfilepath\n   ,targetfilename\nFROM Config.vwacquisitionmetadata\nWHERE JobID = @{pipeline().parameters.JobID} \nAND Isexternaltblinsql=1\nAND Status IN ('Success','Flipped')",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_LS_SRC_Metadata",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach Create External Table",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get ExternalTable Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get ExternalTable Metadata').output.value",
+						"type": "Expression"
+					},
+					"batchCount": 50,
+					"activities": [
+						{
+							"name": "If CRM or Purview Connection",
+							"type": "IfCondition",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@or(contains(toLower(item().Sourceconnectiontype),'crm'),contains(toLower(item().Sourceconnectiontype),'purview'))",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "CreateExternalTable",
+										"type": "SqlServerStoredProcedure",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"storedProcedureName": "[Framework].[usp_CreateExternalTable]",
+											"storedProcedureParameters": {
+												"AccountURL": {
+													"value": {
+														"value": "@item().TargetAccountURL",
+														"type": "Expression"
+													},
+													"type": "String"
+												},
+												"ColumnSchema": {
+													"value": {
+														"value": "@item().ColumnSchema",
+														"type": "Expression"
+													},
+													"type": "String"
+												},
+												"Container": {
+													"value": {
+														"value": "@item().container",
+														"type": "Expression"
+													},
+													"type": "String"
+												},
+												"FileFolder": {
+													"value": {
+														"value": "@item().Targetfilepath",
+														"type": "Expression"
+													},
+													"type": "String"
+												},
+												"FileFormat": {
+													"value": {
+														"value": "@item().TargetFiletype",
+														"type": "Expression"
+													},
+													"type": "String"
+												},
+												"FileName": {
+													"value": {
+														"value": "@item().targetfilename",
+														"type": "Expression"
+													},
+													"type": "String"
+												},
+												"SchemaName": {
+													"value": {
+														"value": "@item().SparkDBName",
+														"type": "Expression"
+													},
+													"type": "String"
+												},
+												"TableName": {
+													"value": {
+														"value": "@item().SourceTableName",
+														"type": "Expression"
+													},
+													"type": "String"
+												}
+											}
+										},
+										"linkedServiceName": {
+											"referenceName": "LS_SRC_AzureSQLDWH",
+											"type": "LinkedServiceReference",
+											"parameters": {
+												"ServerName": {
+													"value": "@pipeline().parameters.SQLDWHServerName",
+													"type": "Expression"
+												},
+												"DBName": {
+													"value": "@pipeline().parameters.SQLDWHDatabaseName",
+													"type": "Expression"
+												}
+											}
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "Get External Table Create Script",
+										"type": "SynapseNotebook",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 2,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"notebook": {
+												"referenceName": "GetExternalTableScript",
+												"type": "NotebookReference"
+											},
+											"parameters": {
+												"TargetAccountURL": {
+													"value": {
+														"value": "@item().TargetAccountURL",
+														"type": "Expression"
+													},
+													"type": "string"
+												},
+												"TargetContainer": {
+													"value": {
+														"value": "@item().container",
+														"type": "Expression"
+													},
+													"type": "string"
+												},
+												"TargetFileType": {
+													"value": {
+														"value": "@item().TargetFiletype",
+														"type": "Expression"
+													},
+													"type": "string"
+												},
+												"TargetFolderPath": {
+													"value": {
+														"value": "@item().Targetfilepath",
+														"type": "Expression"
+													},
+													"type": "string"
+												},
+												"TargetFileName": {
+													"value": {
+														"value": "@item().targetfilename",
+														"type": "Expression"
+													},
+													"type": "string"
+												},
+												"TargetSchemaName": {
+													"value": {
+														"value": "@item().SparkDBName",
+														"type": "Expression"
+													},
+													"type": "string"
+												},
+												"TargetTableName": {
+													"value": {
+														"value": "@item().SourceTableName",
+														"type": "Expression"
+													},
+													"type": "string"
+												}
+											},
+											"sparkPool": {
+												"referenceName": "ETLMigPool",
+												"type": "BigDataPoolReference"
+											},
+											"conf": {
+												"spark.dynamicAllocation.enabled": null,
+												"spark.dynamicAllocation.minExecutors": null,
+												"spark.dynamicAllocation.maxExecutors": null
+											},
+											"numExecutors": null
+										}
+									},
+									{
+										"name": "Create Exernal Table",
+										"type": "Lookup",
+										"dependsOn": [
+											{
+												"activity": "Get External Table Create Script",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "SqlDWSource",
+												"sqlReaderQuery": {
+													"value": "@concat(activity('Get External Table Create Script').output.status.output.result.exitvalue,\n' SELECT 1 AS Success')",
+													"type": "Expression"
+												},
+												"queryTimeout": "02:00:00",
+												"partitionOption": "None"
+											},
+											"dataset": {
+												"referenceName": "DS_LS_SRC_AzureSQLDWH",
+												"type": "DatasetReference",
+												"parameters": {
+													"SchemaName": {
+														"value": "@item().SparkDBName",
+														"type": "Expression"
+													},
+													"TableName": {
+														"value": "@item().SourceTableName",
+														"type": "Expression"
+													},
+													"DBName": {
+														"value": "@pipeline().parameters.SQLDWHDatabaseName",
+														"type": "Expression"
+													},
+													"ServerName": {
+														"value": "@pipeline().parameters.SQLDWHServerName",
+														"type": "Expression"
+													}
+												}
+											}
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Log UnmanagedTableCreation Start",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' Started')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"JobID": {
+				"type": "Int"
+			},
+			"MetadataServerName": {
+				"type": "string"
+			},
+			"MetadataDatabaseName": {
+				"type": "string"
+			},
+			"SQLDWHServerName": {
+				"type": "string"
+			},
+			"SQLDWHDatabaseName": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Framework/Template/2_AcquisitionOrchestration"
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-01-19T10:29:46Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

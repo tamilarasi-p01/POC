@@ -7,40 +7,11 @@
 		},
 		"annotations": [],
 		"type": "AzureSqlTable",
-		"schema": [
-			{
-				"name": "JobId",
-				"type": "int",
-				"precision": 10
-			},
-			{
-				"name": "DQEntityId",
-				"type": "int",
-				"precision": 10
-			},
-			{
-				"name": "Status",
-				"type": "nvarchar"
-			},
-			{
-				"name": "emailbody",
-				"type": "nvarchar"
-			},
-			{
-				"name": "IsActive",
-				"type": "int",
-				"precision": 10
-			},
-			{
-				"name": "ValidationTime",
-				"type": "datetime",
-				"precision": 23,
-				"scale": 3
-			}
-		],
+		"schema": [],
 		"typeProperties": {
 			"schema": "Config",
 			"table": "tblDQValidationStg"
 		}
-	}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
 }

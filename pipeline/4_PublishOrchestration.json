@@ -1,0 +1,427 @@
+{
+	"name": "4_PublishOrchestration",
+	"properties": {
+		"activities": [
+			{
+				"name": "Log Publish Orchestration Start",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' Started')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Log Publish Orchestration End",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Get Job Publish Status",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' Completed')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Get Priority Metadata",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "ForEach SQL DB Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT DISTINCT Priority\nFROM Config.vwPublishMetadata\nWHERE JobID = @{pipeline().parameters.JobID}\nAND Status = 'Ready'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_LS_SRC_Metadata",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach Priority Publish Orchestration",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Priority Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Priority Metadata').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Execute Publish Priority Orchestration",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "4_1_PublishPriorityOrchestration",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"JobID": {
+										"value": "@pipeline().parameters.JobID",
+										"type": "Expression"
+									},
+									"MetadataServerName": {
+										"value": "@pipeline().parameters.MetadataServerName",
+										"type": "Expression"
+									},
+									"MetadataDatabaseName": {
+										"value": "@pipeline().parameters.MetadataDatabaseName",
+										"type": "Expression"
+									},
+									"Priority": {
+										"value": "@item().Priority",
+										"type": "Expression"
+									},
+									"SQLDWHServerName": {
+										"value": "@pipeline().parameters.SQLDWHServerName",
+										"type": "Expression"
+									},
+									"SQLDWHDatabaseName": {
+										"value": "@pipeline().parameters.SQLDWHDatabaseName",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Get Job Publish Status",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "ForEach Priority Publish Orchestration",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_GetJobPublishStatus]",
+					"storedProcedureParameters": {
+						"JobId": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Get SQL DB Metadata",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Updated Publish Status for DQValidation",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT DISTINCT TargetServerName,TargetDBName,TargetStageSchemaName,SynapseDBName\nFROM Config.vwPublishMetadata\nWHERE JobID = @{pipeline().parameters.JobID}\nAND Status = 'Ready'\nAND SkipDWH = 0",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_LS_SRC_Metadata",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach SQL DB Metadata",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get SQL DB Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get SQL DB Metadata').output.value",
+						"type": "Expression"
+					},
+					"batchCount": 50,
+					"activities": [
+						{
+							"name": "Create Schema in Synapse",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[Framework].[usp_CreateSchema]",
+								"storedProcedureParameters": {
+									"SchemaName": {
+										"value": {
+											"value": "@item().TargetDBName",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_SRC_AzureSQLDWH",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"ServerName": {
+										"value": "@pipeline().parameters.SQLDWHServerName",
+										"type": "Expression"
+									},
+									"DBName": {
+										"value": "@pipeline().parameters.SQLDWHDatabaseName",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "Create Stage Schema in Synapse",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[Framework].[usp_CreateSchema]",
+								"storedProcedureParameters": {
+									"SchemaName": {
+										"value": {
+											"value": "@concat(item().TargetDBName,'Stg')",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_SRC_AzureSQLDWH",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"ServerName": {
+										"value": "@pipeline().parameters.SQLDWHServerName",
+										"type": "Expression"
+									},
+									"DBName": {
+										"value": "@pipeline().parameters.SQLDWHDatabaseName",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Updated Publish Status for DQValidation",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Log Publish Orchestration Start",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "DECLARE @JobId INT \n\t,@JobStartTime DATETIME\n\t,@PipelineRunId NVARCHAR(50)\n\nSET @JobId = @{pipeline().parameters.JobID}\nSET @PipelineRunId = '@{pipeline().RunId}'\n\nSELECT @JobStartTime = Starttime\nFROM Config.tblCurrentExecution\nWHERE JobId = @JobId\nAND ExecutionType = 'Job'\n\n\nUPDATE CE\n\tSET CE.Status = (CASE\n\t\t\t\t\t\tWHEN P.AllowStaleData = 1 THEN 'Skipped'\n\t\t\t\t\t\tELSE 'Failed'\n\t\t\t\t\tEND)\n\t\t,CE.PipelineRunId = @PipelineRunId\n\t\t,CE.ErrorMessage = CONCAT('DQValidation Failed for JobId:',CE.JobId,' and DQEntityId:',DQC.DQEntityId)\nFROM Config.tblCurrentExecution CE\nINNER JOIN Config.tblPublish P ON CE.JobId = P.JobID AND CE.ExecutionTypeId = P.PublishId\nINNER JOIN Config.tblDQCheck DQC ON CE.JobId = DQC.JobID AND P.TargetTableName = DQC.EntityName\nINNER JOIN Config.tblDQValidation DQV ON CE.JobId = DQV.JobId AND DQC.DQEntityId = DQV.DQEntityId\nWHERE CE.JobId = @JobId\nAND CE.ExecutionType = 'Publish'\nAND CE.Status = 'Ready'\nAND DQC.DQType = 'DQPrePublish'\nAND DQV.ValidationTime > @JobStartTime\nAND DQV.DQValidation = 0\n\nSELECT @@rowcount AS Cnt",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_LS_SRC_Metadata",
+						"type": "DatasetReference"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"JobID": {
+				"type": "int"
+			},
+			"MetadataServerName": {
+				"type": "string"
+			},
+			"MetadataDatabaseName": {
+				"type": "string"
+			},
+			"SQLDWHServerName": {
+				"type": "string"
+			},
+			"SQLDWHDatabaseName": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Framework/Template/4_PublishOrchestration"
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-01-17T16:03:27Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

@@ -165,8 +165,8 @@
 					},
 					"sink": {
 						"type": "AzureSqlSink",
-						"writeBehavior": "insert",
-						"sqlWriterUseTableLock": false
+						"preCopyScript": "DROP TABLE IF EXISTS [Config].[tblDQValidationStg]\nCREATE TABLE [Config].[tblDQValidationStg]\n(\n\t[JobId]          INT NOT NULL,\n\t[DQEntityId]     INT NOT NULL,\n\t[Status]         NVARCHAR(50) NOT NULL,\n\t[emailbody]      NVARCHAR(MAX) NOT NULL,\n\t[IsActive]       INT NOT NULL,\n\t[ValidationTime] DATETIME NOT NULL\n)",
+						"disableMetricsCollection": false
 					},
 					"enableStaging": false,
 					"translator": {

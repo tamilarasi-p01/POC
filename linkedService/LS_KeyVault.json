@@ -1,6 +1,6 @@
 {
 	"name": "LS_KeyVault",
-	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
 	"properties": {
 		"parameters": {
 			"BaseURL": {

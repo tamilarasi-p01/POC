@@ -1,0 +1,370 @@
+{
+	"name": "1_2_SourceRefreshCheck",
+	"properties": {
+		"activities": [
+			{
+				"name": "GetSourceRefreshMetadata",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Log SourceRefreshCheck Start",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "select * from [Config].[vwSourceRefreshCheckMetadata] (NOLOCK) WHERE JobID = @{pipeline().parameters.JobID}",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_LS_SRC_Metadata",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEachSourceRefreshcheck",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetSourceRefreshMetadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetSourceRefreshMetadata').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Switch-connectionType",
+							"type": "Switch",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"on": {
+									"value": "@item().sourceconnectiontype",
+									"type": "Expression"
+								},
+								"cases": [
+									{
+										"value": "azuresql",
+										"activities": [
+											{
+												"name": "GetSourceRefreshCheck_azuresql",
+												"type": "Lookup",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "7.00:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "AzureSqlSource",
+														"sqlReaderQuery": {
+															"value": "@item().SourceQuery",
+															"type": "Expression"
+														},
+														"queryTimeout": "02:00:00",
+														"partitionOption": "None"
+													},
+													"dataset": {
+														"referenceName": "DS_LS_SHIR_AzureSQL",
+														"type": "DatasetReference"
+													}
+												}
+											},
+											{
+												"name": "usp_UpdateSourceRefreshStatus_azuresql",
+												"type": "SqlServerStoredProcedure",
+												"dependsOn": [
+													{
+														"activity": "GetSourceRefreshCheck_azuresql",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "7.00:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"storedProcedureName": "[Config].[usp_UpdateSourcerefreshStatus]",
+													"storedProcedureParameters": {
+														"OutputValue": {
+															"value": {
+																"value": "@activity('GetSourceRefreshCheck_azuresql').output.firstRow.OutputValue",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"SourceRefreshID": {
+															"value": {
+																"value": "@Item().SourceRefreshId",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														}
+													}
+												},
+												"linkedServiceName": {
+													"referenceName": "LS_SRC_Metadata",
+													"type": "LinkedServiceReference"
+												}
+											}
+										]
+									},
+									{
+										"value": "azuresqlauth",
+										"activities": [
+											{
+												"name": "GetSourceRefreshCheck_azuresqlauth",
+												"type": "Lookup",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "7.00:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "AzureSqlSource",
+														"sqlReaderQuery": {
+															"value": "@item().SourceQuery",
+															"type": "Expression"
+														},
+														"queryTimeout": "02:00:00",
+														"partitionOption": "None"
+													},
+													"dataset": {
+														"referenceName": "DS_LS_SHIR_AzureSQLAuth",
+														"type": "DatasetReference",
+														"parameters": {
+															"ServerName": {
+																"value": "@item().SourceServerName",
+																"type": "Expression"
+															},
+															"DatabaseName": {
+																"value": "@item().SourceDatabaseName",
+																"type": "Expression"
+															},
+															"UserName": {
+																"value": "@item().UserName",
+																"type": "Expression"
+															},
+															"KeyVaultURL": {
+																"value": "@item().KeyVaultURL",
+																"type": "Expression"
+															},
+															"SecretName": {
+																"value": "@item().SecretName",
+																"type": "Expression"
+															}
+														}
+													}
+												}
+											},
+											{
+												"name": "usp_UpdateSourceRefreshStatus_azuresqlauth",
+												"type": "SqlServerStoredProcedure",
+												"dependsOn": [
+													{
+														"activity": "GetSourceRefreshCheck_azuresqlauth",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "7.00:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"storedProcedureName": "[Config].[usp_UpdateSourcerefreshStatus]",
+													"storedProcedureParameters": {
+														"OutputValue": {
+															"value": {
+																"value": "@activity('GetSourceRefreshCheck_azuresqlauth').output.firstRow.OutputValue",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"SourceRefreshID": {
+															"value": {
+																"value": "@Item().SourceRefreshId",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														}
+													}
+												},
+												"linkedServiceName": {
+													"referenceName": "LS_SRC_Metadata",
+													"type": "LinkedServiceReference"
+												}
+											}
+										]
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Log SourceRefreshCheck Start",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' Started')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Log SourceRefreshCheck End",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "ForEachSourceRefreshcheck",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),' Completed')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"JobID": {
+				"type": "int",
+				"defaultValue": 70
+			},
+			"MetadataServerName": {
+				"type": "string",
+				"defaultValue": "maidevasql.database.windows.net"
+			},
+			"MetadataDatabaseName": {
+				"type": "string",
+				"defaultValue": "dbMetadata"
+			}
+		},
+		"variables": {
+			"OutputValue": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Framework/Template/1_Orchestration"
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-01-19T11:39:11Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

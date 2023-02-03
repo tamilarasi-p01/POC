@@ -1,0 +1,880 @@
+{
+	"name": "4_3_PublishSqlSHIR",
+	"properties": {
+		"activities": [
+			{
+				"name": "Log Publish SQL Start",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),'for PublishId:',string(pipeline().parameters.PublishId),' Started')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Log Publish Sql End",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "DQcheck",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID),'for PublishId:',string(pipeline().parameters.PublishId),' Completed')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"rowcount": {
+							"value": {
+								"value": "@if(equals(variables('RowsCopied'),''),0,int(variables('RowsCopied')))",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Log Publish Sql Failed",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "DQcheck",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_Loadlog]",
+					"storedProcedureParameters": {
+						"JobID": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"message": {
+							"value": {
+								"value": "@concat(pipeline().Pipeline, 'for JobId:',string(pipeline().parameters.JobID), 'and PublishId',string(pipeline().parameters.PublishId), 'Failed with DQ Error')",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"pipelinename": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"rowcount": {
+							"value": {
+								"value": "@if(equals(variables('RowsCopied'),''),0,int(variables('RowsCopied')))",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "DQcheck",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Skip DWH",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@and(equals(if(equals(variables('RowsRead'),''),0,int(variables('RowsRead'))),if(equals(variables('RowsCopied'),''),0,int(variables('RowsCopied')))),greater(if(equals(variables('RowsRead'),''),0,int(variables('RowsRead'))),0))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "UpdateStatus_Failure",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[Config].[usp_UpdateExecutionStatus]",
+								"storedProcedureParameters": {
+									"JobId": {
+										"value": {
+											"value": "@pipeline().parameters.JobID",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"ExecutionTypeId": {
+										"value": {
+											"value": "@pipeline().parameters.PublishId",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"Status": {
+										"value": "Failed",
+										"type": "String"
+									},
+									"RowCount": {
+										"value": {
+											"value": "@if(equals(variables('RowsRead'),''),null,int(variables('RowsRead')))",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"ExecutionType": {
+										"value": "Publish",
+										"type": "String"
+									},
+									"ErrorMessage": {
+										"value": "DQ Check failed",
+										"type": "String"
+									},
+									"PipelineRunId": {
+										"value": {
+											"value": "@pipeline().RunId",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_SRC_Metadata",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Force Failure",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "UpdateStatus_Failure",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "RAISERROR('DQ Check Failed',11,1)\n\nSELECT 1 AS Num",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_Metadata",
+									"type": "DatasetReference"
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "UpdateStatus_Success",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Switch schema",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[Config].[usp_UpdateExecutionStatus]",
+								"storedProcedureParameters": {
+									"JobId": {
+										"value": {
+											"value": "@pipeline().parameters.JobID",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"ExecutionTypeId": {
+										"value": {
+											"value": "@pipeline().parameters.PublishId",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"Status": {
+										"value": "Success",
+										"type": "String"
+									},
+									"RowCount": {
+										"value": {
+											"value": "@if(equals(variables('RowsRead'),''),null,int(variables('RowsRead')))",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"ExecutionType": {
+										"value": "Publish",
+										"type": "String"
+									},
+									"PipelineRunId": {
+										"value": {
+											"value": "@pipeline().RunId",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_SRC_Metadata",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Switch schema",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "DECLARE @StageSchemaName NVARCHAR(50)\n\t,@SchemaName NVARCHAR(50)\n\t,@TableName NVARCHAR(50)\n\t,@SQL NVARCHAR(MAX)\n\nSET @TableName = '@{pipeline().parameters.TargetTableName}'\nSET @StageSchemaName = '@{pipeline().parameters.TargetStageSchemaName}'\nSET @SchemaName = '@{pipeline().parameters.TargetSchemaName}'\n\nIF(@Tablename = 'Reporting_ACRNewBizandErosion')\nBEGIN\n\tDECLARE @ColumnName NVARCHAR(255)\n\tSET @ColumnName = @StageSchemaName+'.'+@TableName+'.[ACRMonthlyNetM/MIncrease]'\n\tprint(@ColumnName)\n\tEXEC sp_rename @ColumnName, '[ACRMonthlyNetM/MIncrease]', 'COLUMN';\nEND\n\nSET @SQL = 'IF OBJECT_ID(''' + @SchemaName + '.' + @TableName + ''', N''U'') IS NOT NULL AND OBJECT_ID(''' + @StageSchemaName + '.' + @TableName + ''', N''U'') IS NOT NULL' \n\t\t\t+ CHAR(13) + 'BEGIN'\n\t\t\t+ CHAR(13) + CHAR(9) + 'EXEC SP_RENAME '''+@SchemaName + '.' + @TableName + ''',''' + @TableName + '_Deleted''' \n\t\t\t+ CHAR(13) + 'END'\n\t\t\t+ CHAR(13) + 'IF OBJECT_ID(''' + @StageSchemaName + '.' + @TableName + ''', N''U'') IS NOT NULL AND OBJECT_ID(''' + @SchemaName + '.' + @TableName + ''', N''U'') IS NULL'\n\t\t\t+ CHAR(13) + 'BEGIN'\n\t\t\t+ CHAR(13) + CHAR(9) + 'ALTER SCHEMA ' + @SchemaName + ' TRANSFER ' + @StageSchemaName + '.' + @TableName\n\t\t\t+ CHAR(13) + 'END'\n\t\t\t+ CHAR(13) + 'IF OBJECT_ID(''' + @SchemaName + '.' + @TableName + '_Deleted'', N''U'') IS NOT NULL'\n\t\t\t+ CHAR(13) + 'BEGIN'\n\t\t\t+ CHAR(13) + CHAR(9) + 'DROP TABLE ' + @SchemaName + '.' + @TableName + '_Deleted'\n\t\t\t+ CHAR(13) + 'END'\n\nEXEC(@SQL)\nSELECT 1 AS Num",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SHIR_AzureSQL",
+									"type": "DatasetReference"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "UpdateStatus_SqlCopyStarted",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Log Publish SQL Start",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[Config].[usp_UpdateExecutionStatus]",
+					"storedProcedureParameters": {
+						"JobId": {
+							"value": {
+								"value": "@pipeline().parameters.JobID",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"ExecutionTypeId": {
+							"value": {
+								"value": "@pipeline().parameters.PublishId",
+								"type": "Expression"
+							},
+							"type": "Int32"
+						},
+						"Status": {
+							"value": "SqlCopyStarted",
+							"type": "String"
+						},
+						"ExecutionType": {
+							"value": "Publish",
+							"type": "String"
+						},
+						"PipelineRunId": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SRC_Metadata",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Skip DWH",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "UpdateStatus_SqlCopyStarted",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@pipeline().parameters.SkipDWH",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Get Create Table Script",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlDWSource",
+									"sqlReaderStoredProcedureName": "[Framework].[usp_GetCreateTableScript]",
+									"storedProcedureParameters": {
+										"SchemaName": {
+											"type": "String",
+											"value": {
+												"value": "@pipeline().parameters.TargetDBName",
+												"type": "Expression"
+											}
+										},
+										"TableName": {
+											"type": "String",
+											"value": {
+												"value": "@pipeline().parameters.TargetTableName",
+												"type": "Expression"
+											}
+										},
+										"TargetSchemaName": {
+											"type": "String",
+											"value": {
+												"value": "@pipeline().parameters.TargetStageSchemaName",
+												"type": "Expression"
+											}
+										}
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_AzureSQLDWH",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": {
+											"value": "@pipeline().parameters.TargetDBName",
+											"type": "Expression"
+										},
+										"TableName": {
+											"value": "@pipeline().parameters.TargetTableName",
+											"type": "Expression"
+										},
+										"DBName": {
+											"value": "@pipeline().parameters.SQLDWHDatabaseName",
+											"type": "Expression"
+										},
+										"ServerName": {
+											"value": "@pipeline().parameters.SQLDWHServerName",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Copy data from Synapse to Azure SQL",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Get Create Table Script",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlDWSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"preCopyScript": {
+										"value": "@{activity('Get Create Table Script').output.firstRow.CreateTableScript}",
+										"type": "Expression"
+									},
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_LS_SRC_AzureSQLDWH",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": {
+											"value": "@pipeline().parameters.TargetDBName",
+											"type": "Expression"
+										},
+										"TableName": {
+											"value": "@pipeline().parameters.TargetTableName",
+											"type": "Expression"
+										},
+										"DBName": {
+											"value": "@pipeline().parameters.SQLDWHDatabaseName",
+											"type": "Expression"
+										},
+										"ServerName": {
+											"value": "@pipeline().parameters.SQLDWHServerName",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_LS_TGT_Metadata",
+									"type": "DatasetReference"
+								}
+							]
+						},
+						{
+							"name": "Get RowsRead from Synapse to AzureSQL",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Copy data from Synapse to Azure SQL",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "RowsRead",
+								"value": {
+									"value": "@string(activity('Copy data from synapse to Azure SQL').output.rowsRead)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Get RowsCopied from synapse to AzureSQL",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get RowsRead from Synapse to AzureSQL",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "RowsCopied",
+								"value": {
+									"value": "@string(activity('Copy data from synapse to Azure SQL').output.rowsCopied)",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Copy data from ADLS to Azure SQL",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Get Column Mapping",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "ParquetSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"wildcardFolderPath": {
+											"value": "@pipeline().parameters.TargetFolderPath",
+											"type": "Expression"
+										},
+										"wildcardFileName": "*.parquet",
+										"enablePartitionDiscovery": false
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"value": "@json(activity('Get Column Mapping').output.firstRow.ColumnMapping)",
+									"type": "Expression"
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_LS_SHIR_ADLSGen2",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_LS_TGT_Metadata",
+									"type": "DatasetReference"
+								}
+							]
+						},
+						{
+							"name": "Get RowsRead from ADLS to AzureSQL",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Copy data from ADLS to Azure SQL",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "RowsRead",
+								"value": {
+									"value": "@string(activity('Copy data from ADLS to Azure SQL').output.rowsRead)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Get RowsCopied from ADLS to AzureSQL",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get RowsRead from ADLS to AzureSQL",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "RowsCopied",
+								"value": {
+									"value": "@string(activity('Copy data from ADLS to Azure SQL').output.rowsCopied)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Get Column Mapping",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "DECLARE @ColumnMapping NVARCHAR(MAX)\n\t,@ColumnStructure NVARCHAR(MAX)\n\t,@ColumnList NVARCHAR(MAX)\n\t,@ColumnSchema NVARCHAR(MAX)\n\t,@json_construct NVARCHAR(MAX) = '{\"type\": \"TabularTranslator\", \"mappings\": '\n\n\tSET @ColumnStructure = '@{activity('Get Metadata').output.structure}'\n\n\tDECLARE @SourceQueryColumns TABLE(Num INT IDENTITY(1,1),SourceColumn NVARCHAR(255),SourceType NVARCHAR(255))\n\tDECLARE @PublishTableColumns TABLE(Num INT IDENTITY(1,1),PublishColumn NVARCHAR(255),PublishType NVARCHAR(255))\n\n\n\tINSERT INTO @SourceQueryColumns(SourceColumn,SourceType)\n\tSELECT ColumnName,ColumnType\n\tFROM OPENJSON(@ColumnStructure)\n\tWITH (\n\t\tColumnName NVARCHAR(255) '$.name'\n\t\t,ColumnType NVARCHAR(255) '$.type'\n\t)\n\n\tINSERT INTO @PublishTableColumns(PublishColumn,PublishType)\n\tSELECT COLUMN_NAME\n\t\t,CASE\n\t\t\tWHEN DATA_TYPE IN ('nvarchar','varchar') THEN 'String'\n\t\t\tWHEN DATA_TYPE = 'decimal' THEN 'Decimal'\n\t\t\tWHEN DATA_TYPE IN ('date','datetime') THEN 'DateTime'\n\t\t\tWHEN DATA_TYPE = 'int' THEN 'Int32'\n\t\t\tWHEN DATA_TYPE = 'bigint' THEN 'Int64'\n\t\t\tWHEN DATA_TYPE = 'varbinary' THEN 'Byte[]'\n\t\t\tWHEN DATA_TYPE = 'bit' THEN 'Boolean'\n\t\t\tWHEN DATA_TYPE = 'float' THEN 'Double'\n\t\t\tELSE DATA_TYPE \n\t\tEND AS DATA_TYPE\n\tFROM INFORMATION_SCHEMA.COLUMNS\n\tWHERE TABLE_NAME = '@{pipeline().parameters.TargetTableName}'\n\tAND TABLE_SCHEMA = '@{pipeline().parameters.TargetStageSchemaName}'\n\n\tIF((SELECT COUNT(*) FROM @SourceQueryColumns) = (SELECT COUNT(*) FROM @PublishTableColumns))\n\tBEGIN\n\t\tSELECT \n\t\t\t@ColumnMapping = CONCAT(  @json_construct, '[',\n\t\t\t\tSTRING_AGG(\n\t\t\t\t  CONCAT('{\"source\":{\"name\":\"',CAST(SC.SourceColumn AS NVARCHAR(MAX)),'\",\"type\":\"',CAST(SC.SourceType AS NVARCHAR(MAX)),'\"},\n\t\t\t\t\t   \"sink\":{\"name\":\"',CAST(MC.PublishColumn AS NVARCHAR(MAX)),'\",\"type\":\"',CAST(MC.PublishType AS NVARCHAR(MAX)),'\"}}')\n\t\t\t\t,','),\n\t\t\t\t']}')\n\t\tFROM @SourceQueryColumns AS SC\n\t\tINNER JOIN @PublishTableColumns AS MC\n\t\t\tON SC.Num = MC.Num\n\tEND\n\tELSE\n\tBEGIN\t\t\n\t\tRAISERROR('Source query columns are not matching with metdata',11,1)\n\tEND\n\nSELECT @ColumnMapping AS ColumnMapping",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_LS_SRC_Metadata",
+									"type": "DatasetReference"
+								}
+							}
+						},
+						{
+							"name": "Get Metadata",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_LS_SHIR_ADLSGen2",
+									"type": "DatasetReference"
+								},
+								"fieldList": [
+									"structure"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"JobId": {
+				"type": "int",
+				"defaultValue": 105
+			},
+			"MetaDataServerName": {
+				"type": "string",
+				"defaultValue": "maidevasql.database.windows.net"
+			},
+			"MetaDataDatabaseName": {
+				"type": "string",
+				"defaultValue": "dbMetadata"
+			},
+			"PublishId": {
+				"type": "int",
+				"defaultValue": 2319
+			},
+			"SynapseDBName": {
+				"type": "string",
+				"defaultValue": "dbmaiinsights"
+			},
+			"TargetDBName": {
+				"type": "string",
+				"defaultValue": "dbCommon"
+			},
+			"TargetTableName": {
+				"type": "string",
+				"defaultValue": "Reporting_Opportunity"
+			},
+			"TargetServerName": {
+				"type": "string",
+				"defaultValue": "maidevasql.database.windows.net"
+			},
+			"TargetStageSchemaName": {
+				"type": "string",
+				"defaultValue": "stage"
+			},
+			"TargetSchemaName": {
+				"type": "string",
+				"defaultValue": "dbo"
+			},
+			"TargetAccountURL": {
+				"type": "string",
+				"defaultValue": "https://maidevadls.dfs.core.windows.net"
+			},
+			"TargetContainer": {
+				"type": "string",
+				"defaultValue": "maidatalake"
+			},
+			"TargetFolderPath": {
+				"type": "string",
+				"defaultValue": "data/publish/202201250000/dbCommon/Reporting_Opportunity"
+			},
+			"SQLDWHServerName": {
+				"type": "string",
+				"defaultValue": "tcp:maidevsynapsews.sql.azuresynapse.net,1433"
+			},
+			"SQLDWHDatabaseName": {
+				"type": "string",
+				"defaultValue": "dbmaiinsights"
+			},
+			"SkipDWH": {
+				"type": "bool",
+				"defaultValue": false
+			},
+			"IsTruncate": {
+				"type": "bool",
+				"defaultValue": true
+			}
+		},
+		"variables": {
+			"RowsRead": {
+				"type": "String"
+			},
+			"RowsCopied": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Framework/Template/4_PublishOrchestration/4_3_Publish"
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-01-17T15:58:06Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}
