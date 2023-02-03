@@ -14,7 +14,7 @@
 			"url": "@{linkedService().BaseURL}"
 		},
 		"connectVia": {
-			"referenceName": "AutoResolveIntegrationRuntime",
+			"referenceName": "integrationRuntime1",
 			"type": "IntegrationRuntimeReference"
 		}
 	}
