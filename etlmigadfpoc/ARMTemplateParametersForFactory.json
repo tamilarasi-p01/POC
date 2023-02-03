@@ -8,6 +8,9 @@
 		"AzureDatabricks1_accessToken": {
 			"value": ""
 		},
+		"LS_SHIR_ADLSGen2_accountKey": {
+			"value": ""
+		},
 		"LS_SHIR_AzureSQL_connectionString": {
 			"value": ""
 		},
@@ -27,7 +30,10 @@
 			"value": ""
 		},
 		"etlmigpocws-WorkspaceDefaultSqlServer_connectionString": {
-			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:etlmigpocws.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=etlmigpocws.sql.azuresynapse.net;Initial Catalog=@{linkedService().DBName}"
+		},
+		"etlmigpocws-WorkspaceDefaultStorage_accountKey": {
+			"value": ""
 		},
 		"LS_KeyVault_properties_typeProperties_baseUrl": {
 			"value": "@{linkedService().BaseURL}"
@@ -42,7 +48,7 @@
 			"value": "azuser"
 		},
 		"etlmigpocws-WorkspaceDefaultStorage_properties_typeProperties_url": {
-			"value": "https://etlmigpocadls.dfs.core.windows.net"
+			"value": "https://etlmigpocadls.dfs.core.windows.net/"
 		}
 	}
 }

@@ -11,6 +11,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'accessToken' of 'AzureDatabricks1'"
 		},
+		"LS_SHIR_ADLSGen2_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'LS_SHIR_ADLSGen2'"
+		},
 		"LS_SHIR_AzureSQL_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_SHIR_AzureSQL'"
@@ -40,7 +44,11 @@
 		"etlmigpocws-WorkspaceDefaultSqlServer_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'etlmigpocws-WorkspaceDefaultSqlServer'",
-			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:etlmigpocws.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=etlmigpocws.sql.azuresynapse.net;Initial Catalog=@{linkedService().DBName}"
+		},
+		"etlmigpocws-WorkspaceDefaultStorage_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'etlmigpocws-WorkspaceDefaultStorage'"
 		},
 		"LS_KeyVault_properties_typeProperties_baseUrl": {
 			"type": "string",
@@ -60,7 +68,7 @@
 		},
 		"etlmigpocws-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"type": "string",
-			"defaultValue": "https://etlmigpocadls.dfs.core.windows.net"
+			"defaultValue": "https://etlmigpocadls.dfs.core.windows.net/"
 		},
 		"containerUri": {
 			"type": "string",
@@ -92,6 +100,9 @@
 					"AzureDatabricks1_accessToken": {
 						"value": "[parameters('AzureDatabricks1_accessToken')]"
 					},
+					"LS_SHIR_ADLSGen2_accountKey": {
+						"value": "[parameters('LS_SHIR_ADLSGen2_accountKey')]"
+					},
 					"LS_SHIR_AzureSQL_connectionString": {
 						"value": "[parameters('LS_SHIR_AzureSQL_connectionString')]"
 					},
@@ -112,6 +123,9 @@
 					},
 					"etlmigpocws-WorkspaceDefaultSqlServer_connectionString": {
 						"value": "[parameters('etlmigpocws-WorkspaceDefaultSqlServer_connectionString')]"
+					},
+					"etlmigpocws-WorkspaceDefaultStorage_accountKey": {
+						"value": "[parameters('etlmigpocws-WorkspaceDefaultStorage_accountKey')]"
 					},
 					"LS_KeyVault_properties_typeProperties_baseUrl": {
 						"value": "[parameters('LS_KeyVault_properties_typeProperties_baseUrl')]"

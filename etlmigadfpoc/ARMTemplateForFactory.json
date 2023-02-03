@@ -11,6 +11,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'accessToken' of 'AzureDatabricks1'"
 		},
+		"LS_SHIR_ADLSGen2_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'LS_SHIR_ADLSGen2'"
+		},
 		"LS_SHIR_AzureSQL_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_SHIR_AzureSQL'"
@@ -40,7 +44,11 @@
 		"etlmigpocws-WorkspaceDefaultSqlServer_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'etlmigpocws-WorkspaceDefaultSqlServer'",
-			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:etlmigpocws.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=etlmigpocws.sql.azuresynapse.net;Initial Catalog=@{linkedService().DBName}"
+		},
+		"etlmigpocws-WorkspaceDefaultStorage_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'etlmigpocws-WorkspaceDefaultStorage'"
 		},
 		"LS_KeyVault_properties_typeProperties_baseUrl": {
 			"type": "string",
@@ -60,7 +68,7 @@
 		},
 		"etlmigpocws-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"type": "string",
-			"defaultValue": "https://etlmigpocadls.dfs.core.windows.net"
+			"defaultValue": "https://etlmigpocadls.dfs.core.windows.net/"
 		}
 	},
 	"variables": {
@@ -1728,7 +1736,7 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Log Integrate Start",
+						"name": "Log Integrate Start ",
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [],
 						"policy": {
@@ -1825,7 +1833,7 @@
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [
 							{
-								"activity": "Log Integrate Start",
+								"activity": "Log Integrate Start ",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -2065,7 +2073,7 @@
 					"name": "Framework/Template/3_IntegrationOrchestration"
 				},
 				"annotations": [],
-				"lastPublishTime": "2023-01-27T07:22:50Z"
+				"lastPublishTime": "2023-02-03T03:30:47Z"
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_SRC_Metadata')]"
@@ -2716,7 +2724,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/Pipeline 1')]",
+			"name": "[concat(parameters('factoryName'), '/samplenotebook')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -2734,7 +2742,7 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"notebookPath": "/Shared/Notebook 1"
+							"notebookPath": "/Shared/Test"
 						},
 						"linkedServiceName": {
 							"referenceName": "AzureDatabricks1",
@@ -2747,7 +2755,7 @@
 					"cancelAfter": {}
 				},
 				"annotations": [],
-				"lastPublishTime": "2023-02-02T12:15:07Z"
+				"lastPublishTime": "2023-02-01T16:02:59Z"
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/AzureDatabricks1')]"
@@ -3029,15 +3037,19 @@
 				"annotations": [],
 				"type": "AzureBlobFS",
 				"typeProperties": {
-					"url": "[parameters('LS_SHIR_ADLSGen2_properties_typeProperties_url')]"
+					"url": "[parameters('LS_SHIR_ADLSGen2_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('LS_SHIR_ADLSGen2_accountKey')]"
+					}
 				},
 				"connectVia": {
-					"referenceName": "AutoResolveIntegrationRuntime",
+					"referenceName": "integrationRuntime1",
 					"type": "IntegrationRuntimeReference"
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+				"[concat(variables('factoryId'), '/integrationRuntimes/integrationRuntime1')]"
 			]
 		},
 		{
@@ -3101,12 +3113,12 @@
 					}
 				},
 				"connectVia": {
-					"referenceName": "AutoResolveIntegrationRuntime",
+					"referenceName": "integrationRuntime1",
 					"type": "IntegrationRuntimeReference"
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
+				"[concat(variables('factoryId'), '/integrationRuntimes/integrationRuntime1')]",
 				"[concat(variables('factoryId'), '/linkedServices/LS_KeyVault')]"
 			]
 		},
@@ -3127,12 +3139,12 @@
 					"url": "[parameters('LS_SHIR_CSV_ADLSGen2_properties_typeProperties_url')]"
 				},
 				"connectVia": {
-					"referenceName": "AutoResolveIntegrationRuntime",
+					"referenceName": "integrationRuntime1",
 					"type": "IntegrationRuntimeReference"
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+				"[concat(variables('factoryId'), '/integrationRuntimes/integrationRuntime1')]"
 			]
 		},
 		{
@@ -3154,12 +3166,12 @@
 					"connectionString": "[parameters('LS_SRC_AzureSQLDWH_connectionString')]"
 				},
 				"connectVia": {
-					"referenceName": "AutoResolveIntegrationRuntime",
+					"referenceName": "integrationRuntime1",
 					"type": "IntegrationRuntimeReference"
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+				"[concat(variables('factoryId'), '/integrationRuntimes/integrationRuntime1')]"
 			]
 		},
 		{
@@ -3240,12 +3252,12 @@
 					"connectionString": "[parameters('etlmigpocws-WorkspaceDefaultSqlServer_connectionString')]"
 				},
 				"connectVia": {
-					"referenceName": "AutoResolveIntegrationRuntime",
+					"referenceName": "integrationRuntime1",
 					"type": "IntegrationRuntimeReference"
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+				"[concat(variables('factoryId'), '/integrationRuntimes/integrationRuntime1')]"
 			]
 		},
 		{
@@ -3256,15 +3268,19 @@
 				"annotations": [],
 				"type": "AzureBlobFS",
 				"typeProperties": {
-					"url": "[parameters('etlmigpocws-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+					"url": "[parameters('etlmigpocws-WorkspaceDefaultStorage_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('etlmigpocws-WorkspaceDefaultStorage_accountKey')]"
+					}
 				},
 				"connectVia": {
-					"referenceName": "AutoResolveIntegrationRuntime",
+					"referenceName": "integrationRuntime1",
 					"type": "IntegrationRuntimeReference"
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+				"[concat(variables('factoryId'), '/integrationRuntimes/integrationRuntime1')]"
 			]
 		},
 		{
