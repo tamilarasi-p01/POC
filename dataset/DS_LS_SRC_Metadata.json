@@ -7,7 +7,11 @@
 		},
 		"annotations": [],
 		"type": "AzureSqlTable",
-		"schema": []
+		"schema": [],
+		"typeProperties": {
+			"schema": "Config",
+			"table": "vwSourcerefreshcheckMetadata"
+		}
 	},
 	"type": "Microsoft.Synapse/workspaces/datasets"
 }
