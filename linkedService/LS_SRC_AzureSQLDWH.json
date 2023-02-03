@@ -1,6 +1,5 @@
 {
 	"name": "LS_SRC_AzureSQLDWH",
-	"type": "Microsoft.Synapse/workspaces/linkedservices",
 	"properties": {
 		"parameters": {
 			"ServerName": {
@@ -16,8 +15,9 @@
 			"connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=etlmigpocws.sql.azuresynapse.net;Initial Catalog=etlmigpocDWH"
 		},
 		"connectVia": {
-			"referenceName": "AutoResolveIntegrationRuntime",
+			"referenceName": "integrationRuntime1",
 			"type": "IntegrationRuntimeReference"
 		}
-	}
+	},
+	"type": "Microsoft.Synapse/workspaces/linkedservices"
 }
