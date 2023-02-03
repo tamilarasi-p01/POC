@@ -166,7 +166,10 @@
 				"annotations": [],
 				"type": "AzureSqlTable",
 				"schema": [],
-				"typeProperties": {}
+				"typeProperties": {
+					"schema": "Config",
+					"table": "vwSourcerefreshcheckMetadata"
+				}
 			},
 			"dependsOn": []
 		},
@@ -181,7 +184,37 @@
 				},
 				"annotations": [],
 				"type": "AzureSqlTable",
-				"schema": [],
+				"schema": [
+					{
+						"name": "JobId",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "DQEntityId",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Status",
+						"type": "nvarchar"
+					},
+					{
+						"name": "emailbody",
+						"type": "nvarchar"
+					},
+					{
+						"name": "IsActive",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "ValidationTime",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
 				"typeProperties": {
 					"schema": "Config",
 					"table": "tblDQValidationStg"
@@ -196,7 +229,7 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Log DQ Validation Start",
+						"name": "Log DQ Validation Start ",
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [],
 						"policy": {
@@ -293,7 +326,7 @@
 						"type": "Lookup",
 						"dependsOn": [
 							{
-								"activity": "Log DQ Validation Start",
+								"activity": "Log DQ Validation Start ",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -359,8 +392,8 @@
 							},
 							"sink": {
 								"type": "AzureSqlSink",
-								"preCopyScript": "DROP TABLE IF EXISTS [Config].[tblDQValidationStg]\nCREATE TABLE [Config].[tblDQValidationStg]\n(\n\t[JobId]          INT NOT NULL,\n\t[DQEntityId]     INT NOT NULL,\n\t[Status]         NVARCHAR(50) NOT NULL,\n\t[emailbody]      NVARCHAR(MAX) NOT NULL,\n\t[IsActive]       INT NOT NULL,\n\t[ValidationTime] DATETIME NOT NULL\n)",
-								"disableMetricsCollection": false
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false
 							},
 							"enableStaging": false,
 							"translator": {
@@ -668,7 +701,7 @@
 						"type": "Lookup",
 						"dependsOn": [
 							{
-								"activity": "Log Integrate Priority Orchestration Start",
+								"activity": "Log Integrate Priority Orchestration Start ",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -972,7 +1005,7 @@
 						}
 					},
 					{
-						"name": "Log Integrate Priority Orchestration Start",
+						"name": "Log Integrate Priority Orchestration Start ",
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [],
 						"policy": {
@@ -1112,7 +1145,7 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Log Integrate Type Orchestration Start",
+						"name": "Log Integrate Type Orchestration Start ",
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [],
 						"policy": {
@@ -1209,7 +1242,7 @@
 						"type": "Until",
 						"dependsOn": [
 							{
-								"activity": "Log Integrate Type Orchestration Start",
+								"activity": "Log Integrate Type Orchestration Start ",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -1845,7 +1878,7 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Log Integrate Orchestration Start",
+						"name": "Log Integrate Orchestration Start ",
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [],
 						"policy": {
@@ -2382,7 +2415,7 @@
 						"type": "Lookup",
 						"dependsOn": [
 							{
-								"activity": "Log Integrate Orchestration Start",
+								"activity": "Log Integrate Orchestration Start ",
 								"dependencyConditions": [
 									"Succeeded"
 								]
