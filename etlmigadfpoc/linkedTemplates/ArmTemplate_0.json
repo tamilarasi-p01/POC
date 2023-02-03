@@ -483,7 +483,7 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Log Integrate Start  ",
+						"name": "Log Integrate Start",
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [],
 						"policy": {
@@ -580,7 +580,7 @@
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [
 							{
-								"activity": "Log Integrate Start  ",
+								"activity": "Log Integrate Start",
 								"dependencyConditions": [
 									"Succeeded"
 								]

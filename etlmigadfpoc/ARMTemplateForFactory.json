@@ -82,7 +82,7 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Log DQ Validation Start ",
+						"name": "Log DQ Validation Start",
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [],
 						"policy": {
@@ -179,7 +179,7 @@
 						"type": "Lookup",
 						"dependsOn": [
 							{
-								"activity": "Log DQ Validation Start ",
+								"activity": "Log DQ Validation Start",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -552,7 +552,7 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Log Integrate Type Orchestration Start ",
+						"name": "Log Integrate Type Orchestration Start",
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [],
 						"policy": {
@@ -649,7 +649,7 @@
 						"type": "Until",
 						"dependsOn": [
 							{
-								"activity": "Log Integrate Type Orchestration Start ",
+								"activity": "Log Integrate Type Orchestration Start",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -1290,7 +1290,7 @@
 						"type": "Lookup",
 						"dependsOn": [
 							{
-								"activity": "Log Integrate Priority Orchestration Start ",
+								"activity": "Log Integrate Priority Orchestration Start",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -1594,7 +1594,7 @@
 						}
 					},
 					{
-						"name": "Log Integrate Priority Orchestration Start ",
+						"name": "Log Integrate Priority Orchestration Start",
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [],
 						"policy": {
@@ -1736,7 +1736,7 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Log Integrate Start  ",
+						"name": "Log Integrate Start",
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [],
 						"policy": {
@@ -1833,7 +1833,7 @@
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [
 							{
-								"activity": "Log Integrate Start  ",
+								"activity": "Log Integrate Start",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -2086,7 +2086,7 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Log Integrate Orchestration Start ",
+						"name": "Log Integrate Orchestration Start",
 						"type": "SqlServerStoredProcedure",
 						"dependsOn": [],
 						"policy": {
@@ -2623,7 +2623,7 @@
 						"type": "Lookup",
 						"dependsOn": [
 							{
-								"activity": "Log Integrate Orchestration Start ",
+								"activity": "Log Integrate Orchestration Start",
 								"dependencyConditions": [
 									"Succeeded"
 								]
