@@ -96,116 +96,6 @@
 				}
 			},
 			{
-				"name": "Switch-ProcessingType",
-				"type": "Switch",
-				"dependsOn": [
-					{
-						"activity": "UpdateIntegrateCurrentExecution",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"on": {
-						"value": "@pipeline().parameters.ProcessingType",
-						"type": "Expression"
-					},
-					"cases": [
-						{
-							"value": "SPARK_WITHOUTPARAM",
-							"activities": [
-								{
-									"name": "Run Notebook with out parameters",
-									"type": "SynapseNotebook",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 2,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"notebook": {
-											"referenceName": {
-												"value": "@pipeline().parameters.ExecutionName",
-												"type": "Expression"
-											},
-											"type": "NotebookReference"
-										},
-										"sparkPool": {
-											"referenceName": {
-												"value": "@pipeline().parameters.ClusterName",
-												"type": "Expression"
-											},
-											"type": "BigDataPoolReference"
-										},
-										"conf": {
-											"spark.dynamicAllocation.enabled": true,
-											"spark.dynamicAllocation.minExecutors": 1,
-											"spark.dynamicAllocation.maxExecutors": 25
-										},
-										"numExecutors": 1
-									}
-								}
-							]
-						},
-						{
-							"value": "SPARK_WITHPARAM",
-							"activities": [
-								{
-									"name": "Run Notebook with parameters",
-									"type": "SynapseNotebook",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 2,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"notebook": {
-											"referenceName": {
-												"value": "@pipeline().parameters.ExecutionName",
-												"type": "Expression"
-											},
-											"type": "NotebookReference"
-										},
-										"parameters": {
-											"parametersjson": {
-												"value": {
-													"value": "@string(pipeline().parameters.ExecutionParameters)",
-													"type": "Expression"
-												},
-												"type": "string"
-											}
-										},
-										"sparkPool": {
-											"referenceName": {
-												"value": "@pipeline().parameters.ClusterName",
-												"type": "Expression"
-											},
-											"type": "BigDataPoolReference"
-										},
-										"conf": {
-											"spark.dynamicAllocation.enabled": true,
-											"spark.dynamicAllocation.minExecutors": 1,
-											"spark.dynamicAllocation.maxExecutors": 25
-										},
-										"numExecutors": 1
-									}
-								}
-							]
-						}
-					]
-				}
-			},
-			{
 				"name": "UpdateIntegrateCurrentExecution",
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [
@@ -271,7 +161,7 @@
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [
 					{
-						"activity": "Switch-ProcessingType",
+						"activity": "UpdateIntegrateCurrentExecution",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -321,7 +211,7 @@
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [
 					{
-						"activity": "Switch-ProcessingType",
+						"activity": "UpdateIntegrateCurrentExecution",
 						"dependencyConditions": [
 							"Failed"
 						]
@@ -446,7 +336,7 @@
 			"name": "Framework/Template/3_IntegrationOrchestration"
 		},
 		"annotations": [],
-		"lastPublishTime": "2023-01-27T07:22:50Z"
+		"lastPublishTime": "2023-02-03T03:30:47Z"
 	},
-	"type": "Microsoft.Synapse/workspaces/pipelines"
+	"type": "Microsoft.DataFactory/factories/pipelines"
 }
